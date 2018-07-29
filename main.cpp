@@ -1,4 +1,6 @@
 #include <iostream>
+#include <math.h>
+
 #define GLEW_STATIC
 #include <GL/glew.h>
 #include <GLFW/glfw3.h>
@@ -15,11 +17,18 @@ void key_callback(GLFWwindow* window, int key, int scancode, int action, int mod
 }
 
 GLfloat vertices[] = {
-     0.5f,  0.5f, 0.0f,  // Верхний правый угол
-     0.5f, -0.5f, 0.0f,  // Нижний правый угол
-    -0.5f, -0.5f, 0.0f,  // Нижний левый угол
-    -0.5f,  0.5f, 0.0f   // Верхний левый угол
+    // Позиции         // Цвета
+     0.5f, -0.5f, 0.0f,  1.0f, 0.0f, 0.0f,   // Нижний правый угол
+    -0.5f, -0.5f, 0.0f,  0.0f, 1.0f, 0.0f,   // Нижний левый угол
+     0.0f,  0.5f, 0.0f,  0.0f, 0.0f, 1.0f    // Верхний угол
 };
+//GLfloat vertices[] = {
+//     0.5f,  0.5f, 0.0f,  // Верхний правый угол
+//     0.5f, -0.5f, 0.0f,  // Нижний правый угол
+//    -0.5f, -0.5f, 0.0f,  // Нижний левый угол
+//    -0.5f,  0.5f, 0.0f   // Верхний левый угол
+//};
+
 GLuint indices[] = {  // Помните, что мы начинаем с 0!
     0, 1, 3,   // Первый треугольник
     1, 2, 3    // Второй треугольник
@@ -56,7 +65,11 @@ int main(int argc, char *argv[])
     glViewport(0, 0, width, height);
     glfwSetKeyCallback(window, key_callback);
 
+    GLint nrAttributes;
+    glGetIntegerv(GL_MAX_VERTEX_ATTRIBS, &nrAttributes);
+    std::cout << "Maximum nr of vertex attributes supported: " << nrAttributes << std::endl;
     /******************************************/
+
     Shader shader("./shader.vert", "./shader.frag");
     GLuint VBO;
     glGenBuffers(1, &VBO);
@@ -78,7 +91,7 @@ int main(int argc, char *argv[])
 
     glBindVertexArray(0);
 
-    glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
+//    glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
 
     while (!glfwWindowShouldClose(window))
     {
@@ -88,6 +101,12 @@ int main(int argc, char *argv[])
         glClear(GL_COLOR_BUFFER_BIT);
 
         shader.use();
+
+        GLfloat timeValue = glfwGetTime();
+        GLfloat greenValue = (sin(timeValue) / 2) + 0.5;
+        GLint vertexColorLocation = glGetUniformLocation(shader.m_Program, "ourColor");
+        glUniform4f(vertexColorLocation, 0.0f, greenValue, 0.0f, 1.0f);
+
 
         glBindVertexArray(VAO);
         glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);

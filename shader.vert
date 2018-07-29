@@ -1,8 +1,10 @@
 #version 330 core
+layout (location = 0) in vec3 position; // Устанавливаем позицию атрибута в 0
 
-layout (location = 0) in vec3 position;
+//out vec4 vertexColor; // Передаем цвет во фрагментный шейдер
 
 void main()
 {
-    gl_Position = vec4(position.x, position.y, position.z, 1.0);
+    gl_Position = vec4(position, 1.0); // Напрямую передаем vec3 в vec4
+//    vertexColor = vec4(0.5f, 0.0f, 0.0f, 1.0f); // Устанавливаем значение выходной переменной в темно-красный цвет.
 }
