@@ -1,14 +1,20 @@
 #version 330 core
-layout (location = 0) in vec3 position; // Устанавливаем позицию атрибута в 0
+layout (location = 0) in vec3 position;
+layout (location = 1) in vec3 color;
+layout (location = 2) in vec2 texCoord;
 
-layout (location = 1) in vec3 color;    // А позицию переменной с цветом в 1
+out vec3 ourColor;
+out vec2 TexCoord;
 
-out vec3 ourColor; // Передаем цвет во фрагментный шейдер
+uniform mat4 transform;
+uniform mat4 model;
+uniform mat4 view;
+uniform mat4 projection;
 
-uniform vec3 ourColor1; // Передаем цвет во фрагментный шейдер
 
 void main()
 {
-    gl_Position = vec4(position, 1.0); // Напрямую передаем vec3 в vec4
-    ourColor = color + ourColor1/3;
+    gl_Position = projection * view * model * transform * vec4(position, 1.0f);
+    ourColor = color;
+    TexCoord = vec2(texCoord.x, 1.0 - texCoord.y);
 }

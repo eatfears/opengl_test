@@ -9,7 +9,7 @@ CONFIG -= app_bundle
 
 TEMPLATE = app
 
-LIBS += -lGLEW -lglfw -lGL
+LIBS += -lGLEW -lglfw -lGL -lSOIL
 
 SOURCES += main.cpp \
     shader.cpp
