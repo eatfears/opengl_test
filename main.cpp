@@ -110,6 +110,18 @@ int main()
 
     glBindTexture(GL_TEXTURE_2D, 0);
 
+    glm::vec3 cubePositions[] = {
+        glm::vec3( 0.0f,  0.0f,  0.0f),
+        glm::vec3( 2.0f,  5.0f, -15.0f),
+        glm::vec3(-1.5f, -2.2f, -2.5f),
+        glm::vec3(-3.8f, -2.0f, -12.3f),
+        glm::vec3( 2.4f, -0.4f, -3.5f),
+        glm::vec3(-1.7f,  3.0f, -7.5f),
+        glm::vec3( 1.3f, -2.0f, -2.5f),
+        glm::vec3( 1.5f,  2.0f, -2.5f),
+        glm::vec3( 1.5f,  0.2f, -1.5f),
+        glm::vec3(-1.3f,  1.0f, -1.5f)
+    };
 
     // Set up vertex data (and buffer(s)) and attribute pointers
     GLfloat vertices[] = {
@@ -188,6 +200,10 @@ int main()
     lightingShader.setVec3("light.diffuse", 0.8f, 0.8f, 0.8f);
     lightingShader.setVec3("light.specular", 1.0f, 1.0f, 1.0f);
 
+    lightingShader.setFloat("light.constant",  1.0f);
+    lightingShader.setFloat("light.linear",    0.045f);
+    lightingShader.setFloat("light.quadratic", 0.0075f);
+
     // material properties
     lightingShader.setInt("material.diffuse", 0);
     lightingShader.setInt("material.specular", 1);
@@ -227,12 +243,28 @@ int main()
         lightingShader.setMat4("view", view);
         lightingShader.setMat4("projection", projection);
 
-        lightingShader.setVec3("lightPos", lightPos.x, lightPos.y, lightPos.z);
-        lightingShader.setVec3("viewPos", camera.Position.x, camera.Position.y, camera.Position.z);
+//        glm::vec3 tmp = view * glm::vec4(lightPos, 1.0f);
+//        lightingShader.setVec3("light.position", tmp.x, tmp.y, tmp.z);
+
+        lightingShader.setVec3("light.position",  view*glm::vec4(camera.Position,  1.0f));
+        lightingShader.setVec3("light.direction", view*glm::vec4(camera.Front,  0.0f));
+        lightingShader.setFloat("light.cutOff",   glm::cos(glm::radians(12.5f)));
+        lightingShader.setFloat("light.outerCutOff",   glm::cos(glm::radians(17.5f)));
+
+        lightingShader.setVec3("viewPos", camera.Position);
 
         // Draw the container (using container's vertex attributes)
         glBindVertexArray(containerVAO);
-        glDrawArrays(GL_TRIANGLES, 0, 36);
+        for(unsigned int i = 0; i < 10; i++)
+        {
+            glm::mat4 model(1.0f);
+            model = glm::translate(model, cubePositions[i]);
+            float angle = 20.0f * i;
+            model = glm::rotate(model, glm::radians(angle), glm::vec3(1.0f, 0.3f, 0.5f));
+            lightingShader.setMat4("model", model);
+
+            glDrawArrays(GL_TRIANGLES, 0, 36);
+        }
         glBindVertexArray(0);
 
 
