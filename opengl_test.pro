@@ -18,6 +18,7 @@ DEFINES += QT_DEPRECATED_WARNINGS
 DISTFILES += \
     shader.vert \
     shader.frag \
+    lampshader.vert \
     lampshader.frag
 
 HEADERS += \

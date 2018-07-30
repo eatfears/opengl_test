@@ -79,7 +79,7 @@ int main()
 
     // Build and compile our shader program
     Shader lightingShader("./shader.vert", "./shader.frag");
-    Shader lampShader("./shader.vert", "./lampshader.frag");
+    Shader lampShader("./lampshader.vert", "./lampshader.frag");
 
     GLuint texture1, texture2;
     glGenTextures(1, &texture1);
@@ -240,13 +240,14 @@ int main()
         lampShader.use();
         lampShader.setMat4("view", view);
         lampShader.setMat4("projection", projection);
-        model = glm::mat4();
+        model = glm::mat4(1.0f);
         lightPos.x = 1.0f + sin(glfwGetTime()) * 2.0f;
         lightPos.y = sin(glfwGetTime() / 2.0f) * 1.0f;
         model = glm::translate(model, lightPos);
         model = glm::scale(model, glm::vec3(0.2f)); // Make it a smaller cube
         lampShader.setMat4("model", model);
         // Draw the light object (using light's vertex attributes)
+
         glBindVertexArray(lightVAO);
         glDrawArrays(GL_TRIANGLES, 0, 36);
         glBindVertexArray(0);
