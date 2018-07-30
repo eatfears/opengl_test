@@ -9,17 +9,20 @@ uniform sampler2D ourTexture2;
 
 uniform float angle;
 
+uniform vec3 objectColor;
+uniform vec3 lightColor;
+
 void main()
 {
     float cos_factor = cos(angle);
     float sin_factor = sin(angle);
     vec2 coord = TexCoord;
 
-    coord -= vec2(0.5f, 0.5f);
-    coord = mat2(cos_factor, sin_factor, -sin_factor, cos_factor)*coord;
-    coord += vec2(0.5f, 0.5f);
+    coord = mat2(cos_factor, sin_factor, -sin_factor, cos_factor)*(coord-vec2(0.5f, 0.5f)) + vec2(0.5f, 0.5f);
 
     color = mix(texture2D(ourTexture2, coord), texture2D(ourTexture1, TexCoord*2 - vec2(0.5,0.5)), 0.6) * vec4(ourColor, 1.0f);
 
 //    color = vec4(1.0, 0.0, 0.0, 1.0);
+
+    color = vec4(lightColor * objectColor, 1.0f);
 }
