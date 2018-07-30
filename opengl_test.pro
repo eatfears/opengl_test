@@ -11,8 +11,7 @@ TEMPLATE = app
 
 LIBS += -lGLEW -lglfw -lGL -lSOIL
 
-SOURCES += main.cpp \
-    shader.cpp
+SOURCES += main.cpp
 
 DEFINES += QT_DEPRECATED_WARNINGS
 
@@ -21,4 +20,5 @@ DISTFILES += \
     shader.frag
 
 HEADERS += \
-    shader.h
+    shader.h \
+    camera.h

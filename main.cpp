@@ -10,13 +10,15 @@
 #include <glm/gtc/matrix_transform.hpp>
 #include <glm/gtc/type_ptr.hpp>
 
+#include "camera.h"
 #include "shader.h"
 
 bool keys[1024];
 
-glm::vec3 cameraPos   = glm::vec3(0.0f, 0.0f,  3.0f);
-glm::vec3 cameraFront = glm::vec3(0.0f, 0.0f, -1.0f);
-glm::vec3 cameraUp    = glm::vec3(0.0f, 1.0f,  0.0f);
+
+Camera camera(glm::vec3(0.0f, 0.0f, 3.0f));
+GLfloat lastX = 400, lastY = 300;
+bool firstMouse = true;
 
 void key_callback(GLFWwindow* window, int key, int scancode, int action, int mode)
 {
@@ -24,24 +26,22 @@ void key_callback(GLFWwindow* window, int key, int scancode, int action, int mod
     {
         glfwSetWindowShouldClose(window, GL_TRUE);
     }
-    else if(action == GLFW_PRESS)
+    if (key >= 0 && key < 1024)
     {
-        keys[key] = true;
-    }
-    else if(action == GLFW_RELEASE)
-    {
-        keys[key] = false;
+        if(action == GLFW_PRESS)
+        {
+            keys[key] = true;
+        }
+        else if(action == GLFW_RELEASE)
+        {
+            keys[key] = false;
+        }
     }
 }
 
-GLfloat lastX = 400, lastY = 300;
-GLfloat yaw   = -90.0f;
-GLfloat pitch = 0.0f;
-bool firstMouse = true;
-
 void mouse_callback(GLFWwindow* window, double xpos, double ypos)
 {
-    if (firstMouse) // эта переменная была проинициализирована значением true
+    if(firstMouse)
     {
         lastX = xpos;
         lastY = ypos;
@@ -49,21 +49,17 @@ void mouse_callback(GLFWwindow* window, double xpos, double ypos)
     }
 
     GLfloat xoffset = xpos - lastX;
-    GLfloat yoffset = lastY - ypos; // Обратный порядок вычитания потому что оконные Y-координаты возрастают с верху вниз
+    GLfloat yoffset = lastY - ypos;  // Reversed since y-coordinates go from bottom to left
+
     lastX = xpos;
     lastY = ypos;
 
-    GLfloat sensitivity = 0.05f;
-    xoffset *= sensitivity;
-    yoffset *= sensitivity;
+    camera.processMouseMovement(xoffset, yoffset);
+}
 
-    yaw   += xoffset;
-    pitch += yoffset;
-
-    if(pitch > 90.0f)
-        pitch =  90.0f;
-    if(pitch < -90.0f)
-        pitch = -90.0f;
+void scroll_callback(GLFWwindow* window, double xoffset, double yoffset)
+{
+    camera.processMouseScroll(yoffset/10);
 }
 
 GLfloat deltaTime = 0.0f;	// Время, прошедшее между последним и текущим кадром
@@ -72,15 +68,14 @@ GLfloat lastFrame = 0.0f;  	// Время вывода последнего ка
 void do_movement()
 {
     // Camera controls
-    GLfloat cameraSpeed = 5.0f * deltaTime;
     if(keys[GLFW_KEY_W])
-        cameraPos += cameraSpeed * cameraFront;
+        camera.processKeyboard(FORWARD, deltaTime);
     if(keys[GLFW_KEY_S])
-        cameraPos -= cameraSpeed * cameraFront;
+        camera.processKeyboard(BACKWARD, deltaTime);
     if(keys[GLFW_KEY_A])
-        cameraPos -= glm::normalize(glm::cross(cameraFront, cameraUp)) * cameraSpeed;
+        camera.processKeyboard(LEFT, deltaTime);
     if(keys[GLFW_KEY_D])
-        cameraPos += glm::normalize(glm::cross(cameraFront, cameraUp)) * cameraSpeed;
+        camera.processKeyboard(RIGHT, deltaTime);
 }
 GLfloat vertices[] = {
     // Позиции          // Цвета             // Текстурные координаты
@@ -192,6 +187,7 @@ int main(int argc, char *argv[])
     glfwSetKeyCallback(window, key_callback);
     glfwSetCursorPosCallback(window, mouse_callback);
     glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
+    glfwSetScrollCallback(window, scroll_callback);
 
     GLint n_attributes;
     glGetIntegerv(GL_MAX_VERTEX_ATTRIBS, &n_attributes);
@@ -202,6 +198,7 @@ int main(int argc, char *argv[])
 
     GLuint texture1, texture2;
     glGenTextures(1, &texture1);
+    glGenTextures(1, &texture2);
 
     int img_width, img_height;
     unsigned char* image;
@@ -285,12 +282,6 @@ int main(int argc, char *argv[])
     glm::mat4 model(1.0f);
     model = glm::rotate(model, glm::radians(-55.0f), glm::vec3(1.0f, 0.0f, 0.0f));
 
-    glm::mat4 view(1.0f);
-    view = glm::translate(view, glm::vec3(0.0f, 0.0f, -3.0f));
-
-    glm::mat4 projection(1.0f);
-    projection = glm::perspective(glm::radians(45.0f), (float) width / height, 0.1f, 100.0f);
-
     GLint ourTexture1 = glGetUniformLocation(ourShader.m_Program, "ourTexture1");
     GLint ourTexture2 = glGetUniformLocation(ourShader.m_Program, "ourTexture2");
 
@@ -340,14 +331,10 @@ int main(int argc, char *argv[])
         //                model = glm::rotate(glm::mat4(1.0f), (GLfloat)glfwGetTime() * 3.0f, glm::vec3(0.5f, 1.0f, 0.0f));
         //                glUniformMatrix4fv(modelLoc, 1, GL_FALSE, glm::value_ptr(model));
 
-        glm::vec3 front;
-        front.x = cos(glm::radians(pitch)) * cos(glm::radians(yaw));
-        front.y = sin(glm::radians(pitch));
-        front.z = cos(glm::radians(pitch)) * sin(glm::radians(yaw));
-        cameraFront = glm::normalize(front);
-
-        view = glm::lookAt(cameraPos, cameraPos + cameraFront, cameraUp);
+        glm::mat4 view = camera.getViewMatrix();
         glUniformMatrix4fv(viewLoc, 1, GL_FALSE, glm::value_ptr(view));
+
+        glm::mat4 projection = glm::perspective(camera.Zoom, (float) width / height, 0.1f, 1000.0f);
         glUniformMatrix4fv(projectionLoc, 1, GL_FALSE, glm::value_ptr(projection));
 
 
