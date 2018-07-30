@@ -35,9 +35,6 @@ GLfloat lastX  =  WIDTH  / 2.0;
 GLfloat lastY  =  HEIGHT / 2.0;
 bool    keys[1024];
 
-// Light attributes
-glm::vec3 lightPos(1.2f, 1.0f, 2.0f);
-
 // Deltatime
 GLfloat deltaTime = 0.0f;	// Time between current frame and last frame
 GLfloat lastFrame = 0.0f;  	// Time of last frame
@@ -168,6 +165,14 @@ int main()
         -0.5f,  0.5f, -0.5f,  0.0f,  1.0f,  0.0f,  0.0f,  1.0f,
         -0.5f,  0.5f,  0.5f,  0.0f,  1.0f,  0.0f,  0.0f,  0.0f,
     };
+
+    glm::vec3 pointLightPositions[] = {
+        glm::vec3( 0.7f,  0.2f,  2.0f),
+        glm::vec3( 2.3f, -3.3f, -4.0f),
+        glm::vec3(-4.0f,  2.0f, -12.0f),
+        glm::vec3( 0.0f,  0.0f, -3.0f)
+    };
+
     // First, set the container's VAO (and VBO)
     GLuint VBO, containerVAO;
     glGenVertexArrays(1, &containerVAO);
@@ -196,13 +201,31 @@ int main()
     glBindVertexArray(0);
 
     lightingShader.use();
-    lightingShader.setVec3("light.ambient", 0.3f, 0.3f, 0.3f);
-    lightingShader.setVec3("light.diffuse", 0.8f, 0.8f, 0.8f);
-    lightingShader.setVec3("light.specular", 1.0f, 1.0f, 1.0f);
+    lightingShader.setVec3("dirLight.ambient", 0.0f, 0.0f, 0.0f);
+    lightingShader.setVec3("dirLight.diffuse", 0.8f, 0.4f, 0.4f);
+    lightingShader.setVec3("dirLight.specular", 1.0f, 1.0f, 1.0f);
 
-    lightingShader.setFloat("light.constant",  1.0f);
-    lightingShader.setFloat("light.linear",    0.045f);
-    lightingShader.setFloat("light.quadratic", 0.0075f);
+    for (int i = 0; i < 4; ++i)
+    {
+        std::string name = "pointLights[" + std::to_string(i) + "]";
+        lightingShader.setVec3(name + ".ambient", 0.0f, 0.0f, 0.0f);
+        lightingShader.setVec3(name + ".diffuse", 0.4f, 0.4f, 0.9f);
+        lightingShader.setVec3(name + ".specular", 1.0f, 1.0f, 1.0f);
+
+        lightingShader.setFloat(name + ".constant",  1.0f);
+        lightingShader.setFloat(name + ".linear",    0.45f);
+        lightingShader.setFloat(name + ".quadratic", 0.075f);
+    }
+
+    lightingShader.setVec3("spotLight.ambient", 0.0f, 0.0f, 0.0f);
+    lightingShader.setVec3("spotLight.diffuse", 0.8f, 0.8f, 0.8f);
+    lightingShader.setVec3("spotLight.specular", 1.0f, 1.0f, 1.0f);
+    lightingShader.setFloat("spotLight.constant",  1.0f);
+    lightingShader.setFloat("spotLight.linear",    0.045f);
+    lightingShader.setFloat("spotLight.quadratic", 0.0075f);
+    lightingShader.setFloat("spotLight.cutOff",   glm::cos(glm::radians(12.5f)));
+    lightingShader.setFloat("spotLight.outerCutOff",   glm::cos(glm::radians(16.5f)));
+
 
     // material properties
     lightingShader.setInt("material.diffuse", 0);
@@ -237,21 +260,20 @@ int main()
         glm::mat4 projection = glm::perspective(camera.Zoom, (GLfloat)WIDTH / (GLfloat)HEIGHT, 0.1f, 100.0f);
 
         lightingShader.use();
+        lightingShader.setVec3("dirLight.direction", view*glm::vec4(0.0f, -1.0f, 0.0f, 0.0f));
+
+        for (int i = 0; i < 4; ++i)
+        {
+            lightingShader.setVec3("pointLights[" + std::to_string(i) + "].position", view*glm::vec4(pointLightPositions[i], 1.0f));
+        }
 
         // Pass the matrices to the shader
         lightingShader.setMat4("model", model);
         lightingShader.setMat4("view", view);
         lightingShader.setMat4("projection", projection);
 
-//        glm::vec3 tmp = view * glm::vec4(lightPos, 1.0f);
-//        lightingShader.setVec3("light.position", tmp.x, tmp.y, tmp.z);
-
-        lightingShader.setVec3("light.position",  view*glm::vec4(camera.Position,  1.0f));
-        lightingShader.setVec3("light.direction", view*glm::vec4(camera.Front,  0.0f));
-        lightingShader.setFloat("light.cutOff",   glm::cos(glm::radians(12.5f)));
-        lightingShader.setFloat("light.outerCutOff",   glm::cos(glm::radians(17.5f)));
-
-        lightingShader.setVec3("viewPos", camera.Position);
+        lightingShader.setVec3("spotLight.position",  view*glm::vec4(camera.Position,  1.0f));
+        lightingShader.setVec3("spotLight.direction", view*glm::vec4(camera.Front,  0.0f));
 
         // Draw the container (using container's vertex attributes)
         glBindVertexArray(containerVAO);
@@ -272,16 +294,17 @@ int main()
         lampShader.use();
         lampShader.setMat4("view", view);
         lampShader.setMat4("projection", projection);
-        model = glm::mat4(1.0f);
-        lightPos.x = 1.0f + sin(glfwGetTime()) * 2.0f;
-        lightPos.y = sin(glfwGetTime() / 2.0f) * 1.0f;
-        model = glm::translate(model, lightPos);
-        model = glm::scale(model, glm::vec3(0.2f)); // Make it a smaller cube
-        lampShader.setMat4("model", model);
-        // Draw the light object (using light's vertex attributes)
 
         glBindVertexArray(lightVAO);
-        glDrawArrays(GL_TRIANGLES, 0, 36);
+        for(unsigned int i = 0; i < 4; i++)
+        {
+            glm::mat4 model(1.0f);
+            model = glm::translate(model, pointLightPositions[i]);
+            model = glm::scale(model, glm::vec3(0.1f));
+            lampShader.setMat4("model", model);
+
+            glDrawArrays(GL_TRIANGLES, 0, 36);
+        }
         glBindVertexArray(0);
 
         // Swap the screen buffers

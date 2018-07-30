@@ -174,6 +174,10 @@ public:
         else
         {
             location = glGetUniformLocation(m_Program, name.c_str());
+            if (location == -1)
+            {
+                std::cerr << name << " -1" << std::endl;
+            }
             m_LocationMap[name] = location;
         }
 
