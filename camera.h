@@ -17,7 +17,9 @@ enum Camera_Movement
     FORWARD,
     BACKWARD,
     LEFT,
-    RIGHT
+    RIGHT,
+    UP,
+    DOWN
 };
 
 // Default camera values
@@ -75,14 +77,28 @@ public:
     void processKeyboard(Camera_Movement direction, GLfloat deltaTime)
     {
         GLfloat velocity = this->MovementSpeed * deltaTime;
-        if (direction == FORWARD)
+        switch (direction) {
+        case FORWARD:
             this->Position += this->Front * velocity;
-        if (direction == BACKWARD)
+            break;
+        case BACKWARD:
             this->Position -= this->Front * velocity;
-        if (direction == LEFT)
+            break;
+        case LEFT:
             this->Position -= this->Right * velocity;
-        if (direction == RIGHT)
+            break;
+        case RIGHT:
             this->Position += this->Right * velocity;
+            break;
+        case UP:
+            this->Position += this->Up * velocity;
+            break;
+        case DOWN:
+            this->Position -= this->Up * velocity;
+            break;
+        default:
+            break;
+        }
     }
 
     // Processes input received from a mouse input system. Expects the offset value in both the x and y direction.
