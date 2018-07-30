@@ -150,6 +150,15 @@ int main()
     glEnableVertexAttribArray(0);
     glBindVertexArray(0);
 
+    lightingShader.use();
+    lightingShader.setVec3("light.ambient",  0.2f, 0.2f, 0.2f);
+    lightingShader.setVec3("light.diffuse",  0.5f, 0.5f, 0.5f); // darken the light a bit to fit the scene
+    lightingShader.setVec3("light.specular", 1.0f, 1.0f, 1.0f);
+
+    lightingShader.setVec3("material.ambient",  1.0f, 0.5f, 0.31f);
+    lightingShader.setVec3("material.diffuse",  1.0f, 0.5f, 0.31f);
+    lightingShader.setVec3("material.specular", 0.5f, 0.5f, 0.5f);
+    lightingShader.setFloat("material.shininess", 32.0f);
 
     // Game loop
     while (!glfwWindowShouldClose(window))
@@ -167,54 +176,37 @@ int main()
         glClearColor(0.1f, 0.1f, 0.1f, 1.0f);
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-        // Use cooresponding shader when setting uniforms/drawing objects
-        lightingShader.use();
-        GLint objectColorLoc = glGetUniformLocation(lightingShader.m_Program, "objectColor");
-        GLint lightColorLoc  = glGetUniformLocation(lightingShader.m_Program, "lightColor");
-        glUniform3f(objectColorLoc, 1.0f, 0.5f, 0.31f);
-        glUniform3f(lightColorLoc,  1.0f, 0.5f, 1.0f);
-
         // Create camera transformations
-        glm::mat4 view;
-        view = camera.getViewMatrix();
+        glm::mat4 model(1.0f);
+        glm::mat4 view = camera.getViewMatrix();
         glm::mat4 projection = glm::perspective(camera.Zoom, (GLfloat)WIDTH / (GLfloat)HEIGHT, 0.1f, 100.0f);
-        // Get the uniform locations
-        GLint modelLoc = glGetUniformLocation(lightingShader.m_Program, "model");
-        GLint viewLoc  = glGetUniformLocation(lightingShader.m_Program,  "view");
-        GLint projLoc  = glGetUniformLocation(lightingShader.m_Program,  "projection");
+
+        lightingShader.use();
+
         // Pass the matrices to the shader
-        glUniformMatrix4fv(viewLoc, 1, GL_FALSE, glm::value_ptr(view));
-        glUniformMatrix4fv(projLoc, 1, GL_FALSE, glm::value_ptr(projection));
+        lightingShader.setMat4("model", model);
+        lightingShader.setMat4("view", view);
+        lightingShader.setMat4("projection", projection);
 
-        GLint lightPosLoc = glGetUniformLocation(lightingShader.m_Program, "lightPos");
-        glUniform3f(lightPosLoc, lightPos.x, lightPos.y, lightPos.z);
-
-        GLint viewPosLoc = glGetUniformLocation(lightingShader.m_Program, "viewPos");
-        glUniform3f(viewPosLoc, camera.Position.x, camera.Position.y, camera.Position.z);
+        lightingShader.setVec3("lightPos", lightPos.x, lightPos.y, lightPos.z);
+        lightingShader.setVec3("viewPos", camera.Position.x, camera.Position.y, camera.Position.z);
 
         // Draw the container (using container's vertex attributes)
         glBindVertexArray(containerVAO);
-        glm::mat4 model(1.0f);
-        glUniformMatrix4fv(modelLoc, 1, GL_FALSE, glm::value_ptr(model));
         glDrawArrays(GL_TRIANGLES, 0, 36);
         glBindVertexArray(0);
 
 
         // Also draw the lamp object, again binding the appropriate shader
         lampShader.use();
-        // Get location objects for the matrices on the lamp shader (these could be different on a different shader)
-        modelLoc = glGetUniformLocation(lampShader.m_Program, "model");
-        viewLoc  = glGetUniformLocation(lampShader.m_Program, "view");
-        projLoc  = glGetUniformLocation(lampShader.m_Program, "projection");
-        // Set matrices
-        glUniformMatrix4fv(viewLoc, 1, GL_FALSE, glm::value_ptr(view));
-        glUniformMatrix4fv(projLoc, 1, GL_FALSE, glm::value_ptr(projection));
+        lampShader.setMat4("view", view);
+        lampShader.setMat4("projection", projection);
         model = glm::mat4();
         lightPos.x = 1.0f + sin(glfwGetTime()) * 2.0f;
         lightPos.y = sin(glfwGetTime() / 2.0f) * 1.0f;
         model = glm::translate(model, lightPos);
         model = glm::scale(model, glm::vec3(0.2f)); // Make it a smaller cube
-        glUniformMatrix4fv(modelLoc, 1, GL_FALSE, glm::value_ptr(model));
+        lampShader.setMat4("model", model);
         // Draw the light object (using light's vertex attributes)
         glBindVertexArray(lightVAO);
         glDrawArrays(GL_TRIANGLES, 0, 36);
