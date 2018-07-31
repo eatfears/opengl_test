@@ -46,8 +46,8 @@ int main()
     // Init GLFW
     glfwInit();
     // Set all the required options for GLFW
-    glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
-    glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
+    glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 4);
+    glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 5);
     glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
     glfwWindowHint(GLFW_RESIZABLE, GL_FALSE);
 
@@ -74,6 +74,43 @@ int main()
     // OpenGL options
     glEnable(GL_DEPTH_TEST);
 
+//#define REVERSE_Z
+#ifdef REVERSE_Z
+
+    GLint major, minor;
+    glGetIntegerv(GL_MAJOR_VERSION, &major);
+    glGetIntegerv(GL_MINOR_VERSION, &minor);
+    if ((major > 4 || (major == 4 && minor >= 5)))
+    {
+        glClipControl(GL_LOWER_LEFT, GL_ZERO_TO_ONE);
+    }
+    else
+    {
+        std::cerr << "glClipControl required" << std::endl;
+        exit(1);
+    }
+    glDepthFunc(GL_GEQUAL);
+    glClearDepth(0.0);
+
+    //Reversed Infinite Projection Matrix
+    const float zNear = 0.001f;
+    const double viewAngleVertical = 45.0f;
+    const float f = 1.0 / tan(viewAngleVertical / 2.0); // 1.0 / tan == cotangent
+    const float aspect = float(WIDTH) / float(HEIGHT);
+    glm::mat4 projection =
+    {
+        f/aspect, 0.0f,    0.0f,  0.0f,
+        0.0f,    f,    0.0f,  0.0f,
+        0.0f, 0.0f,    0.0f, -1.0f,
+        0.0f, 0.0f, 2*zNear,  0.0f
+    };
+#else
+    glm::mat4 projection = glm::perspective(camera.Zoom, (GLfloat)WIDTH / (GLfloat)HEIGHT, 0.1f, 100.0f);
+#endif
+
+//    glEnable(GL_STENCIL_TEST);
+//    glStencilFunc(GL_EQUAL, 1, 0xFF);
+    /***********************************************************/
 
     // Build and compile our shader program
     Shader lightingShader("./shader.vert", "./shader.frag");
@@ -201,6 +238,7 @@ int main()
     glEnableVertexAttribArray(0);
     glBindVertexArray(0);
 
+
     lightingShader.use();
     lightingShader.setVec3("dirLight.ambient", 0.2f, 0.2f, 0.1f);
     lightingShader.setVec3("dirLight.diffuse", 0.8f, 0.8f, 0.9f);
@@ -234,7 +272,6 @@ int main()
     lightingShader.setFloat("material.shininess", 64.0f);
 
     Model nanosuit("./nanosuit/nanosuit.obj");
-
     // Game loop
     while (!glfwWindowShouldClose(window))
     {
@@ -249,17 +286,15 @@ int main()
 
         // Clear the colorbuffer
         glClearColor(0.1f, 0.1f, 0.1f, 1.0f);
-        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
 
         glActiveTexture(GL_TEXTURE0);
         glBindTexture(GL_TEXTURE_2D, texture1);
         glActiveTexture(GL_TEXTURE1);
         glBindTexture(GL_TEXTURE_2D, texture2);
 
-
         // Create camera transformations
         glm::mat4 view = camera.getViewMatrix();
-        glm::mat4 projection = glm::perspective(camera.Zoom, (GLfloat)WIDTH / (GLfloat)HEIGHT, 0.1f, 100.0f);
 
         lightingShader.use();
         lightingShader.setVec3("dirLight.direction", glm::vec3(view*glm::vec4(0.0f, -1.0f, 0.0f, 0.0f)));
@@ -296,6 +331,10 @@ int main()
         lightingShader.setMat4("model", model);
         nanosuit.Draw(lightingShader);
 
+
+
+        glStencilMask(0xFF);
+        glStencilMask(0x00);
 
         // Also draw the lamp object, again binding the appropriate shader
         lampShader.use();
