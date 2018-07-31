@@ -112,11 +112,13 @@ int main()
     // Build and compile our shader program
     Shader lightingShader("./shader.vert", "./shader.frag");
     Shader lampShader("./simpleshader.vert", "./lampshader.frag");
-    Shader shaderSingleColor("./scalingshader.vert", "./shadersinglecolor.frag");
+    Shader singleColorShader("./scalingshader.vert", "./singlecolorshader.frag");
+    Shader rgbaShader("./shader.vert", "./rgbashader.frag");
 
-    GLuint texture1, texture2;
+    GLuint texture1, texture2, grassTexture;
     glGenTextures(1, &texture1);
     glGenTextures(1, &texture2);
+    glGenTextures(1, &grassTexture);
 
     int img_width, img_height;
     unsigned char* image;
@@ -141,6 +143,16 @@ int main()
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
     glGenerateMipmap(GL_TEXTURE_2D);
 
+    glBindTexture(GL_TEXTURE_2D, grassTexture);
+    image = SOIL_load_image("grass.png", &img_width, &img_height, 0, SOIL_LOAD_RGBA);
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, img_width, img_height, 0, GL_RGBA, GL_UNSIGNED_BYTE, image);
+    SOIL_free_image_data(image);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+    glGenerateMipmap(GL_TEXTURE_2D);
+
     glBindTexture(GL_TEXTURE_2D, 0);
 
     glm::vec3 cubePositions[] = {
@@ -159,19 +171,19 @@ int main()
     // Set up vertex data (and buffer(s)) and attribute pointers
     GLfloat vertices[] = {
         // positions          // normals           // texture coords
-        -0.5f, -0.5f, -0.5f,  0.0f,  0.0f, -1.0f,  0.0f,  0.0f,
-        0.5f, -0.5f, -0.5f,  0.0f,  0.0f, -1.0f,  1.0f,  0.0f,
-        0.5f,  0.5f, -0.5f,  0.0f,  0.0f, -1.0f,  1.0f,  1.0f,
-        0.5f,  0.5f, -0.5f,  0.0f,  0.0f, -1.0f,  1.0f,  1.0f,
-        -0.5f,  0.5f, -0.5f,  0.0f,  0.0f, -1.0f,  0.0f,  1.0f,
-        -0.5f, -0.5f, -0.5f,  0.0f,  0.0f, -1.0f,  0.0f,  0.0f,
+        -0.5f, -0.5f, -0.5f,  0.0f,  0.0f, -1.0f, 1.0f,  1.0f,
+        0.5f, -0.5f, -0.5f,  0.0f,  0.0f, -1.0f,   0.0f,  1.0f,
+        0.5f,  0.5f, -0.5f,  0.0f,  0.0f, -1.0f,   0.0f,  0.0f,
+        0.5f,  0.5f, -0.5f,  0.0f,  0.0f, -1.0f,   0.0f,  0.0f,
+        -0.5f,  0.5f, -0.5f,  0.0f,  0.0f, -1.0f, 1.0f,  0.0f,
+        -0.5f, -0.5f, -0.5f,  0.0f,  0.0f, -1.0f, 1.0f,  1.0f,
 
-        -0.5f, -0.5f,  0.5f,  0.0f,  0.0f,  1.0f,  0.0f,  0.0f,
-        0.5f, -0.5f,  0.5f,  0.0f,  0.0f,  1.0f,  1.0f,  0.0f,
-        0.5f,  0.5f,  0.5f,  0.0f,  0.0f,  1.0f,  1.0f,  1.0f,
-        0.5f,  0.5f,  0.5f,  0.0f,  0.0f,  1.0f,  1.0f,  1.0f,
-        -0.5f,  0.5f,  0.5f,  0.0f,  0.0f,  1.0f,  0.0f,  1.0f,
-        -0.5f, -0.5f,  0.5f,  0.0f,  0.0f,  1.0f,  0.0f,  0.0f,
+        -0.5f, -0.5f,  0.5f,  0.0f,  0.0f,  1.0f,  1.0f,  1.0f,
+        0.5f, -0.5f,  0.5f,  0.0f,  0.0f,  1.0f,  0.0f,  1.0f,
+        0.5f,  0.5f,  0.5f,  0.0f,  0.0f,  1.0f,  0.0f,  0.0f,
+        0.5f,  0.5f,  0.5f,  0.0f,  0.0f,  1.0f,  0.0f,  0.0f,
+        -0.5f,  0.5f,  0.5f,  0.0f,  0.0f,  1.0f,  1.0f,  0.0f,
+        -0.5f, -0.5f,  0.5f,  0.0f,  0.0f,  1.0f,  1.0f,  1.0f,
 
         -0.5f,  0.5f,  0.5f, -1.0f,  0.0f,  0.0f,  1.0f,  0.0f,
         -0.5f,  0.5f, -0.5f, -1.0f,  0.0f,  0.0f,  1.0f,  1.0f,
@@ -202,6 +214,13 @@ int main()
         -0.5f,  0.5f,  0.5f,  0.0f,  1.0f,  0.0f,  0.0f,  0.0f,
     };
 
+    std::vector<glm::vec3> vegetation;
+    vegetation.push_back(glm::vec3(-1.5f,  0.0f, -0.48f));
+    vegetation.push_back(glm::vec3( 1.5f,  0.0f,  0.51f));
+    vegetation.push_back(glm::vec3( 0.0f,  0.0f,  0.7f));
+    vegetation.push_back(glm::vec3(-0.3f,  0.0f, -2.3f));
+    vegetation.push_back(glm::vec3( 0.5f,  0.0f, -0.6f));
+
     glm::vec3 pointLightPositions[] = {
         glm::vec3( 0.7f,  0.2f,  2.0f),
         glm::vec3( 2.3f, -3.3f, -4.0f),
@@ -210,7 +229,7 @@ int main()
     };
 
     // First, set the container's VAO (and VBO)
-    GLuint VBO, containerVAO;
+    GLuint VBO, containerVAO, lightVAO;
     glGenVertexArrays(1, &containerVAO);
     glGenBuffers(1, &VBO);
 
@@ -226,16 +245,12 @@ int main()
     glEnableVertexAttribArray(2);
     glBindVertexArray(0);
 
-    // Then, we set the light's VAO (VBO stays the same. After all, the vertices are the same for the light object (also a 3D cube))
-    GLuint lightVAO;
     glGenVertexArrays(1, &lightVAO);
     glBindVertexArray(lightVAO);
     glBindBuffer(GL_ARRAY_BUFFER, VBO);
-
     glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 8 * sizeof(GLfloat), (GLvoid*)0);
     glEnableVertexAttribArray(0);
     glBindVertexArray(0);
-
 
     lightingShader.use();
     lightingShader.setVec3("dirLight.ambient", 0.2f, 0.2f, 0.1f);
@@ -287,7 +302,7 @@ int main()
         glStencilOp(GL_KEEP, GL_REPLACE, GL_REPLACE);
 
         // Clear the colorbuffer
-        glClearColor(0.1f, 0.1f, 0.1f, 1.0f);
+        glClearColor(0.1f, 0.12f, 0.12f, 1.0f);
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
 
         glActiveTexture(GL_TEXTURE0);
@@ -342,13 +357,29 @@ int main()
         glStencilFunc(GL_NOTEQUAL, 1, 0xFF);
         glStencilMask(0x00); // отключить запись в трафаретный буфер
         glDisable(GL_DEPTH_TEST);
-        shaderSingleColor.use();
-        shaderSingleColor.setMat4("view", view);
-        shaderSingleColor.setMat4("projection", projection);
-        shaderSingleColor.setMat4("model", model);
-        nanosuit.Draw(shaderSingleColor);
+        singleColorShader.use();
+        singleColorShader.setMat4("view", view);
+        singleColorShader.setMat4("projection", projection);
+        singleColorShader.setMat4("model", model);
+        nanosuit.Draw(singleColorShader);
         glStencilMask(0xFF);
         glEnable(GL_DEPTH_TEST);
+        glStencilFunc(GL_ALWAYS, 1, 0xFF); // каждый фрагмент обновит трафаретный буфер
+
+
+        rgbaShader.use();
+        rgbaShader.setMat4("view", view);
+        rgbaShader.setMat4("projection", projection);
+
+        glBindVertexArray(containerVAO);
+        glBindTexture(GL_TEXTURE_2D, grassTexture);
+        for(unsigned int i = 0; i < vegetation.size(); i++)
+        {
+            model = glm::mat4(1.0f);
+            model = glm::translate(model, vegetation[i]);
+            rgbaShader.setMat4("model", model);
+            glDrawArrays(GL_TRIANGLES, 0, 6);
+        }
 
 
 

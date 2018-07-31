@@ -19,9 +19,10 @@ DISTFILES += \
     shader.vert \
     shader.frag \
     lampshader.frag \
-    shadersinglecolor.frag \
     simpleshader.vert \
-    scalingshader.vert
+    scalingshader.vert \
+    singlecolorshader.frag \
+    rgbashader.frag
 
 HEADERS += \
     shader.h \

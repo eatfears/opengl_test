@@ -12,9 +12,12 @@
 class Shader
 {
     GLuint m_Program;
+    std::string vertex_path;
+    std::string fragment_path;
 public:
 
-    Shader(const GLchar* vertex_path, const GLchar* fragment_path)
+    Shader(const std::string &vertex_path, const std::string &fragment_path)
+        : vertex_path(vertex_path), fragment_path(fragment_path)
     {
         // 1. Получаем исходный код шейдера из filePath
         std::string vertex_code;
@@ -160,7 +163,7 @@ public:
     {
         glUniformMatrix4fv(getUniformLocation(name), 1, GL_FALSE, &mat[0][0]);
     }
-
+private:
     mutable std::map<std::string, GLint> m_LocationMap;
 
     GLint getUniformLocation(const std::string &name) const
@@ -176,7 +179,7 @@ public:
             location = glGetUniformLocation(m_Program, name.c_str());
             if (location == -1)
             {
-                std::cerr << name << " -1" << std::endl;
+                std::cout << "uniform " << name << " not found (" << vertex_path  << ", " << fragment_path << ")" << std::endl;
             }
             m_LocationMap[name] = location;
         }
