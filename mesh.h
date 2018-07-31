@@ -37,7 +37,7 @@ public:
     {
         setupMesh();
     }
-    void Draw(Shader shader)
+    void Draw(const Shader &shader)
     {
         unsigned int diffuseNr = 1;
         unsigned int specularNr = 1;
@@ -108,7 +108,7 @@ public:
     {
         loadModel(path);
     }
-    void Draw(Shader shader)
+    void Draw(const Shader &shader)
     {
         for(unsigned int i = 0; i < meshes.size(); i++)
             meshes[i].Draw(shader);

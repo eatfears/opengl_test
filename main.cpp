@@ -107,14 +107,12 @@ int main()
 #else
     glm::mat4 projection = glm::perspective(camera.Zoom, (GLfloat)WIDTH / (GLfloat)HEIGHT, 0.1f, 100.0f);
 #endif
-
-//    glEnable(GL_STENCIL_TEST);
-//    glStencilFunc(GL_EQUAL, 1, 0xFF);
     /***********************************************************/
 
     // Build and compile our shader program
     Shader lightingShader("./shader.vert", "./shader.frag");
-    Shader lampShader("./lampshader.vert", "./lampshader.frag");
+    Shader lampShader("./simpleshader.vert", "./lampshader.frag");
+    Shader shaderSingleColor("./scalingshader.vert", "./shadersinglecolor.frag");
 
     GLuint texture1, texture2;
     glGenTextures(1, &texture1);
@@ -284,6 +282,10 @@ int main()
         glfwPollEvents();
         do_movement();
 
+
+        glEnable(GL_STENCIL_TEST);
+        glStencilOp(GL_KEEP, GL_REPLACE, GL_REPLACE);
+
         // Clear the colorbuffer
         glClearColor(0.1f, 0.1f, 0.1f, 1.0f);
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
@@ -295,6 +297,8 @@ int main()
 
         // Create camera transformations
         glm::mat4 view = camera.getViewMatrix();
+
+        glStencilMask(0x00);
 
         lightingShader.use();
         lightingShader.setVec3("dirLight.direction", glm::vec3(view*glm::vec4(0.0f, -1.0f, 0.0f, 0.0f)));
@@ -329,12 +333,24 @@ int main()
         model = glm::translate(model, glm::vec3(0.0f, 0.5f, 0.0f));
         model = glm::scale(model, glm::vec3(0.2f));
         lightingShader.setMat4("model", model);
+
+        glStencilFunc(GL_ALWAYS, 1, 0xFF); // каждый фрагмент обновит трафаретный буфер
+        glStencilMask(0xFF);
         nanosuit.Draw(lightingShader);
 
 
-
+        glStencilFunc(GL_NOTEQUAL, 1, 0xFF);
+        glStencilMask(0x00); // отключить запись в трафаретный буфер
+        glDisable(GL_DEPTH_TEST);
+        shaderSingleColor.use();
+        shaderSingleColor.setMat4("view", view);
+        shaderSingleColor.setMat4("projection", projection);
+        shaderSingleColor.setMat4("model", model);
+        nanosuit.Draw(shaderSingleColor);
         glStencilMask(0xFF);
-        glStencilMask(0x00);
+        glEnable(GL_DEPTH_TEST);
+
+
 
         // Also draw the lamp object, again binding the appropriate shader
         lampShader.use();
