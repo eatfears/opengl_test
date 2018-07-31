@@ -18,6 +18,7 @@
 // Other includes
 #include "shader.h"
 #include "camera.h"
+#include "mesh.h"
 
 
 // Function prototypes
@@ -201,8 +202,8 @@ int main()
     glBindVertexArray(0);
 
     lightingShader.use();
-    lightingShader.setVec3("dirLight.ambient", 0.0f, 0.0f, 0.0f);
-    lightingShader.setVec3("dirLight.diffuse", 0.8f, 0.4f, 0.4f);
+    lightingShader.setVec3("dirLight.ambient", 0.2f, 0.2f, 0.1f);
+    lightingShader.setVec3("dirLight.diffuse", 0.8f, 0.8f, 0.9f);
     lightingShader.setVec3("dirLight.specular", 1.0f, 1.0f, 1.0f);
 
     for (int i = 0; i < 4; ++i)
@@ -218,7 +219,7 @@ int main()
     }
 
     lightingShader.setVec3("spotLight.ambient", 0.0f, 0.0f, 0.0f);
-    lightingShader.setVec3("spotLight.diffuse", 0.8f, 0.8f, 0.8f);
+    lightingShader.setVec3("spotLight.diffuse", 0.9f, 0.8f, 0.9f);
     lightingShader.setVec3("spotLight.specular", 1.0f, 1.0f, 1.0f);
     lightingShader.setFloat("spotLight.constant",  1.0f);
     lightingShader.setFloat("spotLight.linear",    0.045f);
@@ -228,9 +229,11 @@ int main()
 
 
     // material properties
-    lightingShader.setInt("material.diffuse", 0);
-    lightingShader.setInt("material.specular", 1);
+    lightingShader.setInt("material.texture_diffuse1", 0);
+    lightingShader.setInt("material.texture_specular1", 1);
     lightingShader.setFloat("material.shininess", 64.0f);
+
+    Model nanosuit("./nanosuit/nanosuit.obj");
 
     // Game loop
     while (!glfwWindowShouldClose(window))
@@ -255,25 +258,23 @@ int main()
 
 
         // Create camera transformations
-        glm::mat4 model(1.0f);
         glm::mat4 view = camera.getViewMatrix();
         glm::mat4 projection = glm::perspective(camera.Zoom, (GLfloat)WIDTH / (GLfloat)HEIGHT, 0.1f, 100.0f);
 
         lightingShader.use();
-        lightingShader.setVec3("dirLight.direction", view*glm::vec4(0.0f, -1.0f, 0.0f, 0.0f));
+        lightingShader.setVec3("dirLight.direction", glm::vec3(view*glm::vec4(0.0f, -1.0f, 0.0f, 0.0f)));
 
         for (int i = 0; i < 4; ++i)
         {
-            lightingShader.setVec3("pointLights[" + std::to_string(i) + "].position", view*glm::vec4(pointLightPositions[i], 1.0f));
+            lightingShader.setVec3("pointLights[" + std::to_string(i) + "].position", glm::vec3(view*glm::vec4(pointLightPositions[i], 1.0f)));
         }
 
         // Pass the matrices to the shader
-        lightingShader.setMat4("model", model);
         lightingShader.setMat4("view", view);
         lightingShader.setMat4("projection", projection);
 
-        lightingShader.setVec3("spotLight.position",  view*glm::vec4(camera.Position,  1.0f));
-        lightingShader.setVec3("spotLight.direction", view*glm::vec4(camera.Front,  0.0f));
+        lightingShader.setVec3("spotLight.position",  glm::vec3(view*glm::vec4(camera.Position, 1.0f)));
+        lightingShader.setVec3("spotLight.direction", glm::vec3(view*glm::vec4(camera.Front, 0.0f)));
 
         // Draw the container (using container's vertex attributes)
         glBindVertexArray(containerVAO);
@@ -288,6 +289,12 @@ int main()
             glDrawArrays(GL_TRIANGLES, 0, 36);
         }
         glBindVertexArray(0);
+
+        glm::mat4 model(1.0f);
+        model = glm::translate(model, glm::vec3(0.0f, 0.5f, 0.0f));
+        model = glm::scale(model, glm::vec3(0.2f));
+        lightingShader.setMat4("model", model);
+        nanosuit.Draw(lightingShader);
 
 
         // Also draw the lamp object, again binding the appropriate shader

@@ -9,10 +9,9 @@ CONFIG -= app_bundle
 
 TEMPLATE = app
 
-LIBS += -lGLEW -lglfw -lGL -lSOIL
+LIBS += -lGLEW -lglfw -lGL -lSOIL -lassimp
 
-SOURCES += main.cpp \
-    mesh.cpp
+SOURCES += main.cpp
 
 DEFINES += QT_DEPRECATED_WARNINGS
 
