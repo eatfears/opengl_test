@@ -115,10 +115,11 @@ int main()
     Shader singleColorShader("./scalingshader.vert", "./singlecolorshader.frag");
     Shader rgbaShader("./shader.vert", "./rgbashader.frag");
 
-    GLuint texture1, texture2, grassTexture;
+    GLuint texture1, texture2, vegetationTexture, windowsTexture;
     glGenTextures(1, &texture1);
     glGenTextures(1, &texture2);
-    glGenTextures(1, &grassTexture);
+    glGenTextures(1, &vegetationTexture);
+    glGenTextures(1, &windowsTexture);
 
     int img_width, img_height;
     unsigned char* image;
@@ -143,8 +144,18 @@ int main()
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
     glGenerateMipmap(GL_TEXTURE_2D);
 
-    glBindTexture(GL_TEXTURE_2D, grassTexture);
+    glBindTexture(GL_TEXTURE_2D, vegetationTexture);
     image = SOIL_load_image("grass.png", &img_width, &img_height, 0, SOIL_LOAD_RGBA);
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, img_width, img_height, 0, GL_RGBA, GL_UNSIGNED_BYTE, image);
+    SOIL_free_image_data(image);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+    glGenerateMipmap(GL_TEXTURE_2D);
+
+    glBindTexture(GL_TEXTURE_2D, windowsTexture);
+    image = SOIL_load_image("glass.png", &img_width, &img_height, 0, SOIL_LOAD_RGBA);
     glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, img_width, img_height, 0, GL_RGBA, GL_UNSIGNED_BYTE, image);
     SOIL_free_image_data(image);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
@@ -221,6 +232,13 @@ int main()
     vegetation.push_back(glm::vec3(-0.3f,  0.0f, -2.3f));
     vegetation.push_back(glm::vec3( 0.5f,  0.0f, -0.6f));
 
+    std::vector<glm::vec3> windows;
+    windows.push_back(glm::vec3(-1.5f,  -1.0f, -0.48f));
+    windows.push_back(glm::vec3( 1.5f,  -1.0f,  0.51f));
+    windows.push_back(glm::vec3( 0.0f,  -1.0f,  0.7f));
+    windows.push_back(glm::vec3(-0.3f,  -1.0f, -2.3f));
+    windows.push_back(glm::vec3( 0.5f,  -1.0f, -0.6f));
+
     glm::vec3 pointLightPositions[] = {
         glm::vec3( 0.7f,  0.2f,  2.0f),
         glm::vec3( 2.3f, -3.3f, -4.0f),
@@ -285,6 +303,10 @@ int main()
     lightingShader.setFloat("material.shininess", 64.0f);
 
     Model nanosuit("./nanosuit/nanosuit.obj");
+
+    glEnable(GL_BLEND);
+    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+
     // Game loop
     while (!glfwWindowShouldClose(window))
     {
@@ -305,15 +327,17 @@ int main()
         glClearColor(0.1f, 0.12f, 0.12f, 1.0f);
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
 
+        // Create camera transformations
+        glm::mat4 view = camera.getViewMatrix();
+        glm::mat4 model(1.0f);
+
+        glStencilMask(0x00);
+
+
         glActiveTexture(GL_TEXTURE0);
         glBindTexture(GL_TEXTURE_2D, texture1);
         glActiveTexture(GL_TEXTURE1);
         glBindTexture(GL_TEXTURE_2D, texture2);
-
-        // Create camera transformations
-        glm::mat4 view = camera.getViewMatrix();
-
-        glStencilMask(0x00);
 
         lightingShader.use();
         lightingShader.setVec3("dirLight.direction", glm::vec3(view*glm::vec4(0.0f, -1.0f, 0.0f, 0.0f)));
@@ -344,8 +368,8 @@ int main()
         }
         glBindVertexArray(0);
 
-        glm::mat4 model(1.0f);
-        model = glm::translate(model, glm::vec3(0.0f, 0.5f, 0.0f));
+
+        model = glm::translate(glm::mat4(1.0f), glm::vec3(0.0f, 0.5f, 0.0f));
         model = glm::scale(model, glm::vec3(0.2f));
         lightingShader.setMat4("model", model);
 
@@ -372,14 +396,31 @@ int main()
         rgbaShader.setMat4("projection", projection);
 
         glBindVertexArray(containerVAO);
-        glBindTexture(GL_TEXTURE_2D, grassTexture);
+        glBindTexture(GL_TEXTURE_2D, vegetationTexture);
         for(unsigned int i = 0; i < vegetation.size(); i++)
         {
-            model = glm::mat4(1.0f);
-            model = glm::translate(model, vegetation[i]);
+            model = glm::translate(glm::mat4(1.0f), vegetation[i]);
             rgbaShader.setMat4("model", model);
             glDrawArrays(GL_TRIANGLES, 0, 6);
         }
+        glBindVertexArray(0);
+
+
+        glBindVertexArray(containerVAO);
+        std::map<float, glm::vec3> sorted;
+        for (unsigned int i = 0; i < windows.size(); i++)
+        {
+            float distance = glm::length(camera.Position - windows[i]);
+            sorted[distance] = windows[i];
+        }
+        glBindTexture(GL_TEXTURE_2D, windowsTexture);
+        for(std::map<float,glm::vec3>::reverse_iterator it = sorted.rbegin(); it != sorted.rend(); ++it)
+        {
+            model = glm::translate(glm::mat4(1.0f), it->second);
+            rgbaShader.setMat4("model", model);
+            glDrawArrays(GL_TRIANGLES, 0, 6);
+        }
+        glBindVertexArray(0);
 
 
 
