@@ -6,7 +6,7 @@ in vec2 TexCoords;
 uniform sampler2D screenTexture;
 
 const float offset = 1.0 / 300.0;
-const float gray = 0.3;
+const float gray = 0.4;
 const float strength = 0.2;
 
 void main()

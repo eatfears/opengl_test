@@ -11,6 +11,7 @@
 
 class Shader
 {
+public:
     GLuint m_Program;
     std::string vertex_path;
     std::string fragment_path;

@@ -56,3 +56,5 @@
 2.  [Гамма-коррекция](https://habrahabr.ru/post/353632/)
 3.  [Карты теней](https://habrahabr.ru/post/353956/)
 4.  [Всенаправленные карты теней](https://habr.com/post/354208/)
+5.  [Normal Mapping](https://habr.com/post/415579/)
+6.  [Parallax Mapping](https://habr.com/post/416163/)
