@@ -15,6 +15,7 @@ struct Material
     sampler2D texture_specular1;
     sampler2D texture_ambient1;
     float shininess;
+    sampler2D texture_diffuse2;
 };
 
 uniform Material material;
@@ -106,10 +107,8 @@ void main()
     vec3 reflection_ratio = texture2D(material.texture_ambient1, TexCoords).rgb;
     vec3 reflection = reflection_ratio * texture(reflectSample, R).rgb;
     result += reflection;
-//    result = mix(result, reflection, 0.5f);
-//    result = texture(reflectSample, Ref).rgb;
-//    result = mix(result, texture(reflectSample, R).rgb, 0.2);
 //    result = vec3(LinearizeDepth(gl_FragCoord.z) / zFar);
+//    result = texture2D(material.texture_diffuse1, TexCoords).rgb;
     color = vec4(result, 1.0);
 }
 

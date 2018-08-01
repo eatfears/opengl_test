@@ -51,10 +51,11 @@ int main()
     // Init GLFW
     glfwInit();
     // Set all the required options for GLFW
-    glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 4);
-    glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 5);
+    glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
+    glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
     glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
     glfwWindowHint(GLFW_RESIZABLE, GL_FALSE);
+    glfwWindowHint(GLFW_SAMPLES, 8);  //MSAA
 
     // Create a GLFWwindow object that we can use for GLFW's functions
     GLFWwindow* window = glfwCreateWindow(WIDTH, HEIGHT, "LearnOpenGL", nullptr, nullptr);
@@ -78,6 +79,7 @@ int main()
 
     // OpenGL options
     glEnable(GL_DEPTH_TEST);
+    glEnable(GL_MULTISAMPLE);
 
 //#define REVERSE_Z
 #ifdef REVERSE_Z
@@ -261,12 +263,16 @@ int main()
     glEnable(GL_BLEND);
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
+#define POSTRENDER
+#ifdef POSTRENDER
+
     unsigned int framebuffer;
     glGenFramebuffers(1, &framebuffer);
     glBindFramebuffer(GL_FRAMEBUFFER , framebuffer);
 
     unsigned int texColorBuffer;
     glGenTextures(1, &texColorBuffer);
+#   ifndef asd
     glBindTexture(GL_TEXTURE_2D, texColorBuffer);
     glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, WIDTH, HEIGHT, 0, GL_RGB, GL_UNSIGNED_BYTE, NULL);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
@@ -274,7 +280,14 @@ int main()
     glBindTexture(GL_TEXTURE_2D, 0);
 
     glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, texColorBuffer, 0);
-
+#   else
+    GLfloat ssaa = 1.0f;
+    GLuint samples = 4;
+    glBindTexture(GL_TEXTURE_2D_MULTISAMPLE, texColorBuffer);
+    glTexImage2DMultisample(GL_TEXTURE_2D_MULTISAMPLE, samples, GL_RGB, WIDTH, HEIGHT, GL_TRUE);
+    glBindTexture(GL_TEXTURE_2D_MULTISAMPLE, 0);
+    glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D_MULTISAMPLE, texColorBuffer, 0);
+#   endif
 
     if ((rc = glCheckFramebufferStatus(GL_FRAMEBUFFER)) == GL_FRAMEBUFFER_COMPLETE)
     {
@@ -299,7 +312,7 @@ int main()
         std::cout << "ERROR::FRAMEBUFFER:: Framebuffer is not complete!" << std::endl;
     }
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
-
+#endif
     /********************************************************/
 
     unsigned int tmp;
@@ -330,7 +343,6 @@ int main()
         glfwPollEvents();
         do_movement();
 
-#define POSTRENDER
 #ifdef POSTRENDER
         glBindFramebuffer(GL_FRAMEBUFFER, framebuffer);
 #endif
@@ -381,10 +393,6 @@ int main()
             lightingShader.setVec3("pointLights[" + std::to_string(i) + "].position", glm::vec3(view*glm::vec4(pointLightPositions[i], 1.0f)));
         }
 
-        // Pass the matrices to the shader
-        lightingShader.setMat4("view", view);
-        lightingShader.setMat4("projection", projection);
-
 
         lightingShader.setBool("flashlight",  flashlight);
         lightingShader.setVec3("spotLight.position",  glm::vec3(view*glm::vec4(camera.Position, 1.0f)));
@@ -405,6 +413,7 @@ int main()
             glDrawArrays(GL_TRIANGLES, 0, 36);
         }
         glBindVertexArray(0);
+        glActiveTexture(GL_TEXTURE0);
 
 
         model = glm::translate(glm::mat4(1.0f), glm::vec3(0.0f, 0.5f, 0.0f));
@@ -421,8 +430,6 @@ int main()
         glEnable(GL_CULL_FACE);
         // Also draw the lamp object, again binding the appropriate shader
         lampShader.use();
-        lampShader.setMat4("view", view);
-        lampShader.setMat4("projection", projection);
 
         glBindVertexArray(lightVAO);
         for(unsigned int i = 0; i < 4; i++)
@@ -441,8 +448,6 @@ int main()
 
         glDepthMask(GL_FALSE);
         skyboxShader.use();
-        skyboxShader.setMat4("view", glm::mat4(glm::mat3(view)));
-        skyboxShader.setMat4("projection", projection);
         glBindVertexArray(skyboxVAO);
         glBindTexture(GL_TEXTURE_CUBE_MAP, cubemapTexture);
         glDrawArrays(GL_TRIANGLES, 0, 36);
@@ -452,8 +457,6 @@ int main()
         /**********
         glDisable(GL_DEPTH_TEST);
         singleColorShader.use();
-        singleColorShader.setMat4("view", view);
-        singleColorShader.setMat4("projection", projection);
         singleColorShader.setMat4("model", model);
         nanosuit.Draw(singleColorShader);
         glStencilMask(0xFF);
@@ -462,11 +465,8 @@ int main()
         /**********/
 
 
-        rgbaShader.use();
-        rgbaShader.setMat4("view", view);
-        rgbaShader.setMat4("projection", projection);
-
         glDisable(GL_CULL_FACE);
+        rgbaShader.use();
         glBindVertexArray(containerVAO);
         glBindTexture(GL_TEXTURE_2D, vegetationTexture);
         for(unsigned int i = 0; i < vegetation.size(); i++)
@@ -493,7 +493,7 @@ int main()
             glDrawArrays(GL_TRIANGLES, 0, 6);
         }
         glBindVertexArray(0);
-
+        glBindTexture(GL_TEXTURE_2D, 0);
 
 
 

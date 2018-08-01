@@ -32,4 +32,5 @@ DISTFILES += \
     postshader.frag \
     postshader.vert \
     skyboxshader.frag \
-    skyboxshader.vert
+    skyboxshader.vert \
+    homes.geom
