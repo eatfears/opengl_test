@@ -109,6 +109,7 @@ int main()
     };
 #else
     glm::mat4 projection = glm::perspective(camera.Zoom, (GLfloat)WIDTH / (GLfloat)HEIGHT, 0.1f, 100.0f);
+    glDepthFunc(GL_LEQUAL);
 #endif
     /***********************************************************/
 
@@ -118,7 +119,9 @@ int main()
     Shader singleColorShader("./scalingshader.vert", "./singlecolorshader.frag");
     Shader rgbaShader("./shader.vert", "./rgbashader.frag");
     Shader screenShader("./postshader.vert", "./postshader.frag");
+    Shader skyboxShader("./skyboxshader.vert", "./skyboxshader.frag");
 
+    GLuint cubemapTexture = loadCubemap(faces);
     GLuint texture1, texture2, vegetationTexture, windowsTexture;
     glGenTextures(1, &texture1);
     glGenTextures(1, &texture2);
@@ -173,9 +176,10 @@ int main()
     /*********************************************************************************/
 
     // First, set the container's VAO (and VBO)
-    GLuint VBO, containerVAO, lightVAO, quadVBO, quadVAO;
+    GLuint VBO, containerVAO, lightVAO, quadVBO, quadVAO, skyboxVBO, skyboxVAO;
     glGenBuffers(1, &VBO);
     glGenBuffers(1, &quadVBO);
+    glGenBuffers(1, &skyboxVBO);
 
     glGenVertexArrays(1, &containerVAO);
     glBindVertexArray(containerVAO);
@@ -204,6 +208,14 @@ int main()
     glEnableVertexAttribArray(0);
     glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 4 * sizeof(GLfloat), (GLvoid*)(2*sizeof(GLfloat)));
     glEnableVertexAttribArray(1);
+    glBindVertexArray(0);
+
+    glGenVertexArrays(1, &skyboxVAO);
+    glBindVertexArray(skyboxVAO);
+    glBindBuffer(GL_ARRAY_BUFFER, skyboxVBO);
+    glBufferData(GL_ARRAY_BUFFER, sizeof(skyboxVertices), skyboxVertices, GL_STATIC_DRAW);
+    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(GLfloat), (GLvoid*)0);
+    glEnableVertexAttribArray(0);
     glBindVertexArray(0);
 
     lightingShader.use();
@@ -305,6 +317,7 @@ int main()
         // Create camera transformations
         glm::mat4 view = camera.getViewMatrix();
         glm::mat4 model(1.0f);
+
 
         glEnable(GL_CULL_FACE);
 
@@ -423,6 +436,16 @@ int main()
             glDrawArrays(GL_TRIANGLES, 0, 36);
         }
         glBindVertexArray(0);
+
+
+        glDepthMask(GL_FALSE);
+        skyboxShader.use();
+        skyboxShader.setMat4("view", glm::mat4(glm::mat3(view)));
+        skyboxShader.setMat4("projection", projection);
+        glBindVertexArray(skyboxVAO);
+        glBindTexture(GL_TEXTURE_CUBE_MAP, cubemapTexture);
+        glDrawArrays(GL_TRIANGLES, 0, 36);
+        glDepthMask(GL_TRUE);
 
         /************************************************************/
 

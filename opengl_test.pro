@@ -30,4 +30,6 @@ DISTFILES += \
     singlecolorshader.frag \
     rgbashader.frag \
     postshader.frag \
-    postshader.vert
+    postshader.vert \
+    skyboxshader.frag \
+    skyboxshader.vert

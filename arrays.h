@@ -1,6 +1,56 @@
 #ifndef ARRAYS_H
 #define ARRAYS_H
 
+#include <vector>
+#include <string>
+#include <glm/glm.hpp>
+
+
+float skyboxVertices[] = {
+    // positions
+    -1.0f,  1.0f, -1.0f,
+    -1.0f, -1.0f, -1.0f,
+    1.0f, -1.0f, -1.0f,
+    1.0f, -1.0f, -1.0f,
+    1.0f,  1.0f, -1.0f,
+    -1.0f,  1.0f, -1.0f,
+
+    -1.0f, -1.0f,  1.0f,
+    -1.0f, -1.0f, -1.0f,
+    -1.0f,  1.0f, -1.0f,
+    -1.0f,  1.0f, -1.0f,
+    -1.0f,  1.0f,  1.0f,
+    -1.0f, -1.0f,  1.0f,
+
+    1.0f, -1.0f, -1.0f,
+    1.0f, -1.0f,  1.0f,
+    1.0f,  1.0f,  1.0f,
+    1.0f,  1.0f,  1.0f,
+    1.0f,  1.0f, -1.0f,
+    1.0f, -1.0f, -1.0f,
+
+    -1.0f, -1.0f,  1.0f,
+    -1.0f,  1.0f,  1.0f,
+    1.0f,  1.0f,  1.0f,
+    1.0f,  1.0f,  1.0f,
+    1.0f, -1.0f,  1.0f,
+    -1.0f, -1.0f,  1.0f,
+
+    -1.0f,  1.0f, -1.0f,
+    1.0f,  1.0f, -1.0f,
+    1.0f,  1.0f,  1.0f,
+    1.0f,  1.0f,  1.0f,
+    -1.0f,  1.0f,  1.0f,
+    -1.0f,  1.0f, -1.0f,
+
+    -1.0f, -1.0f, -1.0f,
+    -1.0f, -1.0f,  1.0f,
+    1.0f, -1.0f, -1.0f,
+    1.0f, -1.0f, -1.0f,
+    -1.0f, -1.0f,  1.0f,
+    1.0f, -1.0f,  1.0f
+};
+
 // Set up vertex data (and buffer(s)) and attribute pointers
 GLfloat vertices[] = {
     // Back face
@@ -50,10 +100,10 @@ GLfloat vertices[] = {
 GLfloat quad_vertices[] = {
     -1.0f,  1.0f,  0.0f, 1.0f,
     -1.0f, -1.0f,  0.0f, 0.0f,
-     1.0f, -1.0f,  1.0f, 0.0f,
+    1.0f, -1.0f,  1.0f, 0.0f,
 
-     1.0f, -1.0f,  1.0f, 0.0f,
-     1.0f,  1.0f,  1.0f, 1.0f,
+    1.0f, -1.0f,  1.0f, 0.0f,
+    1.0f,  1.0f,  1.0f, 1.0f,
     -1.0f,  1.0f,  0.0f, 1.0f,
 };
 
@@ -92,6 +142,15 @@ std::vector<glm::vec3> windows = {
     glm::vec3( 0.0f,  -1.0f,  0.7f),
     glm::vec3(-0.3f,  -1.0f, -2.3f),
     glm::vec3( 0.5f,  -1.0f, -0.6f),
+};
+
+std::vector<std::string> faces = {
+    "skybox/lake/right.jpg",
+    "skybox/lake/left.jpg",
+    "skybox/lake/top.jpg",
+    "skybox/lake/bottom.jpg",
+    "skybox/lake/front.jpg",
+    "skybox/lake/back.jpg"
 };
 
 #endif // ARRAYS_H
