@@ -13,6 +13,12 @@ LIBS += -lGLEW -lglfw -lGL -lSOIL -lassimp
 
 SOURCES += main.cpp
 
+HEADERS += \
+    shader.h \
+    camera.h \
+    mesh.h \
+    arrays.h
+
 DEFINES += QT_DEPRECATED_WARNINGS
 
 DISTFILES += \
@@ -22,9 +28,6 @@ DISTFILES += \
     simpleshader.vert \
     scalingshader.vert \
     singlecolorshader.frag \
-    rgbashader.frag
-
-HEADERS += \
-    shader.h \
-    camera.h \
-    mesh.h
+    rgbashader.frag \
+    postshader.frag \
+    postshader.vert

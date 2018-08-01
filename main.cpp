@@ -20,6 +20,8 @@
 #include "camera.h"
 #include "mesh.h"
 
+#include "arrays.h"
+
 
 // Function prototypes
 void key_callback(GLFWwindow* window, int key, int scancode, int action, int mode);
@@ -43,6 +45,7 @@ GLfloat lastFrame = 0.0f;  	// Time of last frame
 // The MAIN function, from here we start the application and run the game loop
 int main()
 {
+    int rc;
     // Init GLFW
     glfwInit();
     // Set all the required options for GLFW
@@ -74,7 +77,7 @@ int main()
     // OpenGL options
     glEnable(GL_DEPTH_TEST);
 
-//#define REVERSE_Z
+    //#define REVERSE_Z
 #ifdef REVERSE_Z
 
     GLint major, minor;
@@ -114,6 +117,7 @@ int main()
     Shader lampShader("./simpleshader.vert", "./lampshader.frag");
     Shader singleColorShader("./scalingshader.vert", "./singlecolorshader.frag");
     Shader rgbaShader("./shader.vert", "./rgbashader.frag");
+    Shader screenShader("./postshader.vert", "./postshader.frag");
 
     GLuint texture1, texture2, vegetationTexture, windowsTexture;
     glGenTextures(1, &texture1);
@@ -166,95 +170,17 @@ int main()
 
     glBindTexture(GL_TEXTURE_2D, 0);
 
-    glm::vec3 cubePositions[] = {
-        glm::vec3( 0.0f,  0.0f,  0.0f),
-        glm::vec3( 2.0f,  5.0f, -15.0f),
-        glm::vec3(-1.5f, -2.2f, -2.5f),
-        glm::vec3(-3.8f, -2.0f, -12.3f),
-        glm::vec3( 2.4f, -0.4f, -3.5f),
-        glm::vec3(-1.7f,  3.0f, -7.5f),
-        glm::vec3( 1.3f, -2.0f, -2.5f),
-        glm::vec3( 1.5f,  2.0f, -2.5f),
-        glm::vec3( 1.5f,  0.2f, -1.5f),
-        glm::vec3(-1.3f,  1.0f, -1.5f)
-    };
-
-    // Set up vertex data (and buffer(s)) and attribute pointers
-    GLfloat vertices[] = {
-        // Back face
-        -0.5f, -0.5f, -0.5f,  0.0f,  0.0f, -1.0f,  0.0f, 0.0f, // Bottom-left
-        0.5f,  0.5f, -0.5f, 0.0f,  0.0f, -1.0f,   1.0f, 1.0f, // top-right
-        0.5f, -0.5f, -0.5f, 0.0f,  0.0f, -1.0f,   1.0f, 0.0f, // bottom-right
-        0.5f,  0.5f, -0.5f, 0.0f,  0.0f, -1.0f,   1.0f, 1.0f, // top-right
-        -0.5f, -0.5f, -0.5f,  0.0f,  0.0f, -1.0f,  0.0f, 0.0f, // bottom-left
-        -0.5f,  0.5f, -0.5f,  0.0f,  0.0f, -1.0f,  0.0f, 1.0f, // top-left
-        // Front face
-        -0.5f, -0.5f,  0.5f,  0.0f,  0.0f,  1.0f,  0.0f, 0.0f, // bottom-left
-        0.5f, -0.5f,  0.5f, 0.0f,  0.0f,  1.0f,   1.0f, 0.0f, // bottom-right
-        0.5f,  0.5f,  0.5f, 0.0f,  0.0f,  1.0f,   1.0f, 1.0f, // top-right
-        0.5f,  0.5f,  0.5f, 0.0f,  0.0f,  1.0f,   1.0f, 1.0f, // top-right
-        -0.5f,  0.5f,  0.5f,  0.0f,  0.0f,  1.0f,  0.0f, 1.0f, // top-left
-        -0.5f, -0.5f,  0.5f,  0.0f,  0.0f,  1.0f,  0.0f, 0.0f, // bottom-left
-        // Left face
-        -0.5f,  0.5f,  0.5f, -1.0f,  0.0f,  0.0f,  1.0f, 0.0f, // top-right
-        -0.5f,  0.5f, -0.5f, -1.0f,  0.0f,  0.0f,  1.0f, 1.0f, // top-left
-        -0.5f, -0.5f, -0.5f, -1.0f,  0.0f,  0.0f,  0.0f, 1.0f, // bottom-left
-        -0.5f, -0.5f, -0.5f, -1.0f,  0.0f,  0.0f,  0.0f, 1.0f, // bottom-left
-        -0.5f, -0.5f,  0.5f, -1.0f,  0.0f,  0.0f,  0.0f, 0.0f, // bottom-right
-        -0.5f,  0.5f,  0.5f, -1.0f,  0.0f,  0.0f,  1.0f, 0.0f, // top-right
-        // Right face
-        0.5f,  0.5f,  0.5f, 1.0f,  0.0f,  0.0f,   1.0f, 0.0f, // top-left
-        0.5f, -0.5f, -0.5f, 1.0f,  0.0f,  0.0f,   0.0f, 1.0f, // bottom-right
-        0.5f,  0.5f, -0.5f, 1.0f,  0.0f,  0.0f,   1.0f, 1.0f, // top-right
-        0.5f, -0.5f, -0.5f, 1.0f,  0.0f,  0.0f,   0.0f, 1.0f, // bottom-right
-        0.5f,  0.5f,  0.5f, 1.0f,  0.0f,  0.0f,   1.0f, 0.0f, // top-left
-        0.5f, -0.5f,  0.5f, 1.0f,  0.0f,  0.0f,   0.0f, 0.0f, // bottom-left
-        // Bottom face
-        -0.5f, -0.5f, -0.5f,  0.0f, -1.0f,  0.0f,  0.0f, 1.0f, // top-right
-        0.5f, -0.5f, -0.5f, 0.0f, -1.0f,  0.0f,   1.0f, 1.0f, // top-left
-        0.5f, -0.5f,  0.5f, 0.0f, -1.0f,  0.0f,   1.0f, 0.0f, // bottom-left
-        0.5f, -0.5f,  0.5f, 0.0f, -1.0f,  0.0f,   1.0f, 0.0f, // bottom-left
-        -0.5f, -0.5f,  0.5f,  0.0f, -1.0f,  0.0f,  0.0f, 0.0f, // bottom-right
-        -0.5f, -0.5f, -0.5f,  0.0f, -1.0f,  0.0f,  0.0f, 1.0f, // top-right
-        // Top face
-        -0.5f,  0.5f, -0.5f,  0.0f,  1.0f,  0.0f,  0.0f, 1.0f, // top-left
-        0.5f,  0.5f,  0.5f, 0.0f,  1.0f,  0.0f,   1.0f, 0.0f, // bottom-right
-        0.5f,  0.5f, -0.5f, 0.0f,  1.0f,  0.0f,   1.0f, 1.0f, // top-right
-        0.5f,  0.5f,  0.5f, 0.0f,  1.0f,  0.0f,   1.0f, 0.0f, // bottom-right
-        -0.5f,  0.5f, -0.5f,  0.0f,  1.0f,  0.0f,  0.0f, 1.0f, // top-left
-        -0.5f,  0.5f,  0.5f,  0.0f,  1.0f,  0.0f,  0.0f, 0.0f, // bottom-left
-    };
-
-    std::vector<glm::vec3> vegetation;
-    vegetation.push_back(glm::vec3(-1.5f,  0.0f, -0.48f));
-    vegetation.push_back(glm::vec3( 1.5f,  0.0f,  0.51f));
-    vegetation.push_back(glm::vec3( 0.0f,  0.0f,  0.7f));
-    vegetation.push_back(glm::vec3(-0.3f,  0.0f, -2.3f));
-    vegetation.push_back(glm::vec3( 0.5f,  0.0f, -0.6f));
-
-    std::vector<glm::vec3> windows;
-    windows.push_back(glm::vec3(-1.5f,  -1.0f, -0.48f));
-    windows.push_back(glm::vec3( 1.5f,  -1.0f,  0.51f));
-    windows.push_back(glm::vec3( 0.0f,  -1.0f,  0.7f));
-    windows.push_back(glm::vec3(-0.3f,  -1.0f, -2.3f));
-    windows.push_back(glm::vec3( 0.5f,  -1.0f, -0.6f));
-
-    glm::vec3 pointLightPositions[] = {
-        glm::vec3( 0.7f,  0.2f,  2.0f),
-        glm::vec3( 2.3f, -3.3f, -4.0f),
-        glm::vec3(-4.0f,  2.0f, -12.0f),
-        glm::vec3( 0.0f,  0.0f, -3.0f)
-    };
+    /*********************************************************************************/
 
     // First, set the container's VAO (and VBO)
-    GLuint VBO, containerVAO, lightVAO;
-    glGenVertexArrays(1, &containerVAO);
+    GLuint VBO, containerVAO, lightVAO, quadVBO, quadVAO;
     glGenBuffers(1, &VBO);
+    glGenBuffers(1, &quadVBO);
 
+    glGenVertexArrays(1, &containerVAO);
+    glBindVertexArray(containerVAO);
     glBindBuffer(GL_ARRAY_BUFFER, VBO);
     glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW);
-
-    glBindVertexArray(containerVAO);
     glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 8 * sizeof(GLfloat), (GLvoid*)0);
     glEnableVertexAttribArray(0);
     glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 8 * sizeof(GLfloat), (GLvoid*)(3*sizeof(GLfloat)));
@@ -268,6 +194,16 @@ int main()
     glBindBuffer(GL_ARRAY_BUFFER, VBO);
     glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 8 * sizeof(GLfloat), (GLvoid*)0);
     glEnableVertexAttribArray(0);
+    glBindVertexArray(0);
+
+    glGenVertexArrays(1, &quadVAO);
+    glBindVertexArray(quadVAO);
+    glBindBuffer(GL_ARRAY_BUFFER, quadVBO);
+    glBufferData(GL_ARRAY_BUFFER, sizeof(quad_vertices), quad_vertices, GL_STATIC_DRAW);
+    glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, 4 * sizeof(GLfloat), (GLvoid*)0);
+    glEnableVertexAttribArray(0);
+    glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 4 * sizeof(GLfloat), (GLvoid*)(2*sizeof(GLfloat)));
+    glEnableVertexAttribArray(1);
     glBindVertexArray(0);
 
     lightingShader.use();
@@ -307,6 +243,45 @@ int main()
     glEnable(GL_BLEND);
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
+    unsigned int framebuffer;
+    glGenFramebuffers(1, &framebuffer);
+    glBindFramebuffer(GL_FRAMEBUFFER , framebuffer);
+
+    unsigned int texColorBuffer;
+    glGenTextures(1, &texColorBuffer);
+    glBindTexture(GL_TEXTURE_2D, texColorBuffer);
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, 800, 600, 0, GL_RGB, GL_UNSIGNED_BYTE, NULL);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+    glBindTexture(GL_TEXTURE_2D, 0);
+
+    glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, texColorBuffer, 0);
+
+
+    if ((rc = glCheckFramebufferStatus(GL_FRAMEBUFFER)) == GL_FRAMEBUFFER_COMPLETE)
+    {
+        // все хорошо, можно плясать джигу!
+    }
+    else
+    {
+        std::cout << "No frame buffer " << rc << std::endl;
+        exit(1);
+    }
+
+    unsigned int rbo;
+    glGenRenderbuffers(1, &rbo);
+    glBindRenderbuffer(GL_RENDERBUFFER, rbo);
+    glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH24_STENCIL8, 800, 600);
+    glBindRenderbuffer(GL_RENDERBUFFER, 0);
+
+    glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_STENCIL_ATTACHMENT, GL_RENDERBUFFER, rbo);
+
+    if(glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE)
+    {
+        std::cout << "ERROR::FRAMEBUFFER:: Framebuffer is not complete!" << std::endl;
+    }
+    glBindFramebuffer(GL_FRAMEBUFFER, 0);
+
     // Game loop
     while (!glfwWindowShouldClose(window))
     {
@@ -319,19 +294,22 @@ int main()
         glfwPollEvents();
         do_movement();
 
-        glEnable(GL_CULL_FACE);
-
-        glEnable(GL_STENCIL_TEST);
-        glStencilOp(GL_KEEP, GL_REPLACE, GL_REPLACE);
+        glBindFramebuffer(GL_FRAMEBUFFER, framebuffer);
 
         // Clear the colorbuffer
         glClearColor(0.1f, 0.12f, 0.12f, 1.0f);
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
+        glEnable(GL_DEPTH_TEST);
+
 
         // Create camera transformations
         glm::mat4 view = camera.getViewMatrix();
         glm::mat4 model(1.0f);
 
+        glEnable(GL_CULL_FACE);
+
+        glEnable(GL_STENCIL_TEST);
+        glStencilOp(GL_KEEP, GL_REPLACE, GL_REPLACE);
         glStencilMask(0x00);
 
 
@@ -396,7 +374,6 @@ int main()
         rgbaShader.setMat4("view", view);
         rgbaShader.setMat4("projection", projection);
 
-
         glDisable(GL_CULL_FACE);
 
         glBindVertexArray(containerVAO);
@@ -445,6 +422,20 @@ int main()
 
             glDrawArrays(GL_TRIANGLES, 0, 36);
         }
+        glBindVertexArray(0);
+
+        /************************************************************/
+
+        //Render texture quad
+        glBindFramebuffer(GL_FRAMEBUFFER, 0); // возвращаем буфер кадра по умолчанию
+        glClearColor(1.0f, .0f, 1.0f, 1.0f);
+        glClear(GL_COLOR_BUFFER_BIT);
+
+        screenShader.use();
+        glBindVertexArray(quadVAO);
+        glDisable(GL_DEPTH_TEST);
+        glBindTexture(GL_TEXTURE_2D, texColorBuffer);
+        glDrawArrays(GL_TRIANGLES, 0, 6);
         glBindVertexArray(0);
 
         // Swap the screen buffers
