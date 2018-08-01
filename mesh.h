@@ -67,10 +67,10 @@ public:
         glDrawElements(GL_TRIANGLES, indices.size(), GL_UNSIGNED_INT, 0);
         glBindVertexArray(0);
     }
-
-private:
+//private:
     /*  Render data  */
     GLuint VAO, VBO, EBO;
+private:
     /*  Functions    */
     void setupMesh()
     {
@@ -116,10 +116,11 @@ public:
         for(unsigned int i = 0; i < meshes.size(); i++)
             meshes[i].Draw(shader);
     }
-private:
+//private:
     std::vector<Mesh> meshes;
-    std::string directory;
     std::vector<Texture> textures_loaded;
+private:
+    std::string directory;
 
     void loadModel(const std::string &path)
     {

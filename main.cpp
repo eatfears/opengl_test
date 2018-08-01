@@ -122,7 +122,6 @@ int main()
     Shader lightingShader("./shader.vert", "./shader.frag");
     Shader lampShader("./simpleshader.vert", "./lampshader.frag");
     Shader singleColorShader("./scalingshader.vert", "./singlecolorshader.frag");
-    Shader simpleShader("./simpleshader.vert", "./simpleshader.frag");
     Shader rgbaShader("./shader.vert", "./rgbashader.frag");
     Shader screenShader("./postshader.vert", "./postshader.frag");
     Shader skyboxShader("./skyboxshader.vert", "./skyboxshader.frag");
@@ -258,6 +257,7 @@ int main()
     lightingShader.setInt("material.texture_ambient1", 2);
     lightingShader.setInt("reflectSample", 3);
     lightingShader.setFloat("material.shininess", 64.0f);
+    lightingShader.setBool("instance", false);
 
     screenShader.setInt("screenTexture", 0);
 
@@ -267,12 +267,12 @@ int main()
 
     // generate a large list of semi-random model transformation matrices
     // ------------------------------------------------------------------
-    unsigned int amount = 1000;
+    unsigned int amount = 5000;
     glm::mat4* modelMatrices;
     modelMatrices = new glm::mat4[amount];
     srand(glfwGetTime()); // initialize random seed
-    float radius = 50.0;
-    float offset = 2.5f;
+    float radius = 35.0;
+    float offset = 5.5f;
     for (unsigned int i = 0; i < amount; i++)
     {
         glm::mat4 model(1.0f);
@@ -282,13 +282,13 @@ int main()
         float displacement = (rand() % (int)(2 * offset * 100)) / 100.0f - offset;
         float x = sin(angle) * radius + displacement;
         displacement = (rand() % (int)(2 * offset * 100)) / 100.0f - offset;
-        float y = displacement * 0.4f; // keep height of asteroid field smaller compared to width of x and z
+        float y = displacement * 0.1f; // keep height of asteroid field smaller compared to width of x and z
         displacement = (rand() % (int)(2 * offset * 100)) / 100.0f - offset;
         float z = cos(angle) * radius + displacement;
         model = glm::translate(model, glm::vec3(x, y, z));
 
         // 2. scale: Scale between 0.05 and 0.25f
-        float scale = (rand() % 20) / 100.0f + 0.05;
+        float scale = (rand() % 20) / 200.0f + 0.05;
         model = glm::scale(model, glm::vec3(scale));
 
         // 3. rotation: add random rotation around a (semi)randomly picked rotation axis vector
@@ -297,6 +297,35 @@ int main()
 
         // 4. now add to list of matrices
         modelMatrices[i] = model;
+    }
+
+    // создаем VBO
+    unsigned int buffer;
+    glGenBuffers(1, &buffer);
+    glBindBuffer(GL_ARRAY_BUFFER, buffer);
+    glBufferData(GL_ARRAY_BUFFER, amount * sizeof(glm::mat4), &modelMatrices[0], GL_STATIC_DRAW);
+
+    for(unsigned int i = 0; i < rock.meshes.size(); i++)
+    {
+        unsigned int VAO = rock.meshes[i].VAO;
+        glBindVertexArray(VAO);
+        // настройка атрибутов
+        GLsizei vec4Size = sizeof(glm::vec4);
+        glEnableVertexAttribArray(3);
+        glVertexAttribPointer(3, 4, GL_FLOAT, GL_FALSE, 4 * vec4Size, (void*)0);
+        glEnableVertexAttribArray(4);
+        glVertexAttribPointer(4, 4, GL_FLOAT, GL_FALSE, 4 * vec4Size, (void*)(vec4Size));
+        glEnableVertexAttribArray(5);
+        glVertexAttribPointer(5, 4, GL_FLOAT, GL_FALSE, 4 * vec4Size, (void*)(2 * vec4Size));
+        glEnableVertexAttribArray(6);
+        glVertexAttribPointer(6, 4, GL_FLOAT, GL_FALSE, 4 * vec4Size, (void*)(3 * vec4Size));
+
+        glVertexAttribDivisor(3, 1);
+        glVertexAttribDivisor(4, 1);
+        glVertexAttribDivisor(5, 1);
+        glVertexAttribDivisor(6, 1);
+
+        glBindVertexArray(0);
     }
 
     glEnable(GL_BLEND);
@@ -484,12 +513,35 @@ int main()
         planet.Draw(lightingShader);
 
         // рендер метеоритов
+#define INSTANCE
+#ifdef INSTANCE
+        lightingShader.setBool("instance", true);
+        lightingShader.setInt("material.texture_diffuse1", 0);
+        glActiveTexture(GL_TEXTURE0);
+        glBindTexture(GL_TEXTURE_2D, rock.textures_loaded[0].id);
+        lightingShader.setInt("material.texture_specular1", 1);
+        glActiveTexture(GL_TEXTURE1);
+        glBindTexture(GL_TEXTURE_2D, 0);
+        lightingShader.setInt("material.texture_ambient1", 2);
+        glActiveTexture(GL_TEXTURE2);
+        glBindTexture(GL_TEXTURE_2D, 0);
+        for (unsigned int i = 0; i < rock.meshes.size(); i++)
+        {
+            glBindVertexArray(rock.meshes[i].VAO);
+            glDrawElementsInstanced(GL_TRIANGLES, rock.meshes[i].indices.size(), GL_UNSIGNED_INT, 0, amount);
+            glBindVertexArray(0);
+        }
+        glActiveTexture(GL_TEXTURE0);
+        lightingShader.setBool("instance", false);
+#else
         for(unsigned int i = 0; i < amount; i++)
         {
             lightingShader.setMat4("model", modelMatrices[i]);
             rock.Draw(lightingShader);
         }
+#endif
 
+        lightingShader.use();
         model = glm::translate(glm::mat4(1.0f), glm::vec3(0.0f, 0.5f, 0.0f));
         model = glm::scale(model, glm::vec3(0.2f));
         lightingShader.setMat4("model", model);

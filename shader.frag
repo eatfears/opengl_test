@@ -5,7 +5,6 @@ in vec3 FragPos;
 in vec3 Normal;
 in vec2 TexCoords;
 
-//uniform samplerCube skybox;
 uniform samplerCube reflectSample;
 uniform mat4 viewInv;
 
@@ -110,6 +109,7 @@ void main()
 //    result = vec3(LinearizeDepth(gl_FragCoord.z) / zFar);
 //    result = texture2D(material.texture_diffuse1, TexCoords).rgb;
     color = vec4(result, 1.0);
+//    color = vec4(1.0);
 }
 
 vec3 CalcDirLight(DirLight light, vec3 normal, vec3 viewDir)
