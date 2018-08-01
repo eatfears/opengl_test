@@ -5,6 +5,8 @@ in vec3 FragPos;
 in vec3 Normal;
 in vec2 TexCoords;
 
+uniform samplerCube skybox;
+
 struct Material
 {
     sampler2D texture_diffuse1;
@@ -71,6 +73,11 @@ float LinearizeDepth(float depth)
     return (2.0 * zNear * zFar) / (zFar + zNear - z * (zFar - zNear));
 }
 
+
+in vec3 Position_world;
+in vec3 Normal_world;
+uniform vec3 cameraPos;
+
 void main()
 {
     vec3 norm = normalize(Normal);
@@ -85,6 +92,12 @@ void main()
     }
 
     result += CalcSpotLight(spotLight, norm, FragPos, viewDir);
+
+
+    vec3 I = normalize(Position_world - cameraPos);
+    vec3 R = reflect(I, normalize(Normal_world));
+
+    result = texture(skybox, R).rgb;
 
     color = vec4(result, 1.0);
 //    color  = vec4(vec3(LinearizeDepth(gl_FragCoord.z) / zFar), 1.0);

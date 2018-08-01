@@ -77,7 +77,7 @@ int main()
     // OpenGL options
     glEnable(GL_DEPTH_TEST);
 
-    //#define REVERSE_Z
+//#define REVERSE_Z
 #ifdef REVERSE_Z
 
     GLint major, minor;
@@ -219,15 +219,16 @@ int main()
     glBindVertexArray(0);
 
     lightingShader.use();
-    lightingShader.setVec3("dirLight.ambient", 0.2f, 0.2f, 0.1f);
-    lightingShader.setVec3("dirLight.diffuse", 0.8f, 0.8f, 0.9f);
+    lightingShader.setVec3("dirLight.ambient", 0.2f, 0.2f, 0.2f);
+    lightingShader.setVec3("dirLight.diffuse", 1.5f, 1.5f, 1.5f);
     lightingShader.setVec3("dirLight.specular", 1.0f, 1.0f, 1.0f);
+
 
     for (int i = 0; i < 4; ++i)
     {
         std::string name = "pointLights[" + std::to_string(i) + "]";
         lightingShader.setVec3(name + ".ambient", 0.0f, 0.0f, 0.0f);
-        lightingShader.setVec3(name + ".diffuse", 0.4f, 0.4f, 0.9f);
+        lightingShader.setVec3(name + ".diffuse", 0.4f, 0.4f, 1.6f);
         lightingShader.setVec3(name + ".specular", 1.0f, 1.0f, 1.0f);
 
         lightingShader.setFloat(name + ".constant",  1.0f);
@@ -306,7 +307,10 @@ int main()
         glfwPollEvents();
         do_movement();
 
+#define POSTRENDER
+#ifdef POSTRENDER
         glBindFramebuffer(GL_FRAMEBUFFER, framebuffer);
+#endif
 
         // Clear the colorbuffer
         glClearColor(0.1f, 0.12f, 0.12f, 1.0f);
@@ -321,10 +325,12 @@ int main()
 
         glEnable(GL_CULL_FACE);
 
-        glEnable(GL_STENCIL_TEST);
-        glStencilOp(GL_KEEP, GL_REPLACE, GL_REPLACE);
-        glStencilMask(0x00);
+//        glEnable(GL_STENCIL_TEST);
+//        glStencilOp(GL_KEEP, GL_REPLACE, GL_REPLACE);
+//        glStencilMask(0x00);
 
+
+        glBindTexture(GL_TEXTURE_CUBE_MAP, cubemapTexture);
 
         glActiveTexture(GL_TEXTURE0);
         glBindTexture(GL_TEXTURE_2D, texture1);
@@ -332,7 +338,7 @@ int main()
         glBindTexture(GL_TEXTURE_2D, texture2);
 
         lightingShader.use();
-        lightingShader.setVec3("dirLight.direction", glm::vec3(view*glm::vec4(0.0f, -1.0f, 0.0f, 0.0f)));
+        lightingShader.setVec3("dirLight.direction", glm::vec3(view*glm::vec4(-0.3f, -0.5f, -0.2f, 0.0f)));
 
         for (int i = 0; i < 4; ++i)
         {
@@ -345,6 +351,7 @@ int main()
 
         lightingShader.setVec3("spotLight.position",  glm::vec3(view*glm::vec4(camera.Position, 1.0f)));
         lightingShader.setVec3("spotLight.direction", glm::vec3(view*glm::vec4(camera.Front, 0.0f)));
+        lightingShader.setVec3("cameraPos", camera.Position);
 
         // Draw the container (using container's vertex attributes)
         glBindVertexArray(containerVAO);
@@ -365,13 +372,45 @@ int main()
         model = glm::scale(model, glm::vec3(0.2f));
         lightingShader.setMat4("model", model);
 
-        glStencilFunc(GL_ALWAYS, 1, 0xFF); // каждый фрагмент обновит трафаретный буфер
-        glStencilMask(0xFF);
+//        glStencilFunc(GL_ALWAYS, 1, 0xFF); // каждый фрагмент обновит трафаретный буфер
+//        glStencilMask(0xFF);
         nanosuit.Draw(lightingShader);
+//        glStencilFunc(GL_NOTEQUAL, 1, 0xFF);
+//        glStencilMask(0x00); // отключить запись в трафаретный буфер
 
 
-        glStencilFunc(GL_NOTEQUAL, 1, 0xFF);
-        glStencilMask(0x00); // отключить запись в трафаретный буфер
+        glEnable(GL_CULL_FACE);
+        // Also draw the lamp object, again binding the appropriate shader
+        lampShader.use();
+        lampShader.setMat4("view", view);
+        lampShader.setMat4("projection", projection);
+
+        glBindVertexArray(lightVAO);
+        for(unsigned int i = 0; i < 4; i++)
+        {
+            glm::mat4 model(1.0f);
+            model = glm::translate(model, pointLightPositions[i]);
+            model = glm::scale(model, glm::vec3(0.1f));
+            lampShader.setMat4("model", model);
+
+            glDrawArrays(GL_TRIANGLES, 0, 36);
+        }
+        glBindVertexArray(0);
+
+
+        /******************************************/
+
+        glDepthMask(GL_FALSE);
+        skyboxShader.use();
+        skyboxShader.setMat4("view", glm::mat4(glm::mat3(view)));
+        skyboxShader.setMat4("projection", projection);
+        glBindVertexArray(skyboxVAO);
+        glBindTexture(GL_TEXTURE_CUBE_MAP, cubemapTexture);
+        glDrawArrays(GL_TRIANGLES, 0, 36);
+        glDepthMask(GL_TRUE);
+        glBindTexture(GL_TEXTURE_CUBE_MAP, 0);
+
+        /**********
         glDisable(GL_DEPTH_TEST);
         singleColorShader.use();
         singleColorShader.setMat4("view", view);
@@ -381,6 +420,7 @@ int main()
         glStencilMask(0xFF);
         glEnable(GL_DEPTH_TEST);
         glStencilFunc(GL_ALWAYS, 1, 0xFF); // каждый фрагмент обновит трафаретный буфер
+        /**********/
 
 
         rgbaShader.use();
@@ -388,7 +428,6 @@ int main()
         rgbaShader.setMat4("projection", projection);
 
         glDisable(GL_CULL_FACE);
-
         glBindVertexArray(containerVAO);
         glBindTexture(GL_TEXTURE_2D, vegetationTexture);
         for(unsigned int i = 0; i < vegetation.size(); i++)
@@ -416,39 +455,13 @@ int main()
         }
         glBindVertexArray(0);
 
-        glEnable(GL_CULL_FACE);
 
 
 
-        // Also draw the lamp object, again binding the appropriate shader
-        lampShader.use();
-        lampShader.setMat4("view", view);
-        lampShader.setMat4("projection", projection);
 
-        glBindVertexArray(lightVAO);
-        for(unsigned int i = 0; i < 4; i++)
-        {
-            glm::mat4 model(1.0f);
-            model = glm::translate(model, pointLightPositions[i]);
-            model = glm::scale(model, glm::vec3(0.1f));
-            lampShader.setMat4("model", model);
-
-            glDrawArrays(GL_TRIANGLES, 0, 36);
-        }
-        glBindVertexArray(0);
-
-
-        glDepthMask(GL_FALSE);
-        skyboxShader.use();
-        skyboxShader.setMat4("view", glm::mat4(glm::mat3(view)));
-        skyboxShader.setMat4("projection", projection);
-        glBindVertexArray(skyboxVAO);
-        glBindTexture(GL_TEXTURE_CUBE_MAP, cubemapTexture);
-        glDrawArrays(GL_TRIANGLES, 0, 36);
-        glDepthMask(GL_TRUE);
 
         /************************************************************/
-
+#ifdef POSTRENDER
         //Render texture quad
         glBindFramebuffer(GL_FRAMEBUFFER, 0); // возвращаем буфер кадра по умолчанию
         glClearColor(1.0f, 1.0f, 1.0f, 1.0f);
@@ -460,6 +473,8 @@ int main()
         glBindTexture(GL_TEXTURE_2D, texColorBuffer);
         glDrawArrays(GL_TRIANGLES, 0, 6);
         glBindVertexArray(0);
+#endif
+        /************************************************/
 
         // Swap the screen buffers
         glfwSwapBuffers(window);

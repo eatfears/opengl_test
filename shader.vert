@@ -12,11 +12,19 @@ out vec3 Normal;
 
 out vec2 TexCoords;
 
+
+out vec3 Position_world;
+out vec3 Normal_world;
+
 void main()
 {
-    gl_Position = projection * view * model * vec4(aPosition, 1.0f);
     FragPos = vec3(view * model * vec4(aPosition, 1.0f));
     Normal = mat3(transpose(inverse(view * model))) * aNormal;
 
     TexCoords = aTexCoords;
+
+    Position_world = vec3(model * vec4(aPosition, 1.0));
+    Normal_world = mat3(transpose(inverse(model))) * aNormal;
+
+    gl_Position = projection * view * model * vec4(aPosition, 1.0f);
 }
