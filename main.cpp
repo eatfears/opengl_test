@@ -137,7 +137,7 @@ int main()
     unsigned char* image;
 
     glBindTexture(GL_TEXTURE_2D, boxDiffuseTexture);
-    image = SOIL_load_image("map_diffuse.png", &img_width, &img_height, 0, SOIL_LOAD_RGB);
+    image = SOIL_load_image("resources/textures/map_diffuse.png", &img_width, &img_height, 0, SOIL_LOAD_RGB);
     glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, img_width, img_height, 0, GL_RGB, GL_UNSIGNED_BYTE, image);
     SOIL_free_image_data(image);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
@@ -147,7 +147,7 @@ int main()
     glGenerateMipmap(GL_TEXTURE_2D);
 
     glBindTexture(GL_TEXTURE_2D, boxSpecularTexture);
-    image = SOIL_load_image("map_specular.png", &img_width, &img_height, 0, SOIL_LOAD_RGB);
+    image = SOIL_load_image("resources/textures/map_specular.png", &img_width, &img_height, 0, SOIL_LOAD_RGB);
     glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, img_width, img_height, 0, GL_RGB, GL_UNSIGNED_BYTE, image);
     SOIL_free_image_data(image);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
@@ -157,7 +157,7 @@ int main()
     glGenerateMipmap(GL_TEXTURE_2D);
 
     glBindTexture(GL_TEXTURE_2D, vegetationTexture);
-    image = SOIL_load_image("grass.png", &img_width, &img_height, 0, SOIL_LOAD_RGBA);
+    image = SOIL_load_image("resources/textures/grass.png", &img_width, &img_height, 0, SOIL_LOAD_RGBA);
     glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, img_width, img_height, 0, GL_RGBA, GL_UNSIGNED_BYTE, image);
     SOIL_free_image_data(image);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
@@ -167,7 +167,7 @@ int main()
     glGenerateMipmap(GL_TEXTURE_2D);
 
     glBindTexture(GL_TEXTURE_2D, windowsTexture);
-    image = SOIL_load_image("glass.png", &img_width, &img_height, 0, SOIL_LOAD_RGBA);
+    image = SOIL_load_image("resources/textures/glass.png", &img_width, &img_height, 0, SOIL_LOAD_RGBA);
     glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, img_width, img_height, 0, GL_RGBA, GL_UNSIGNED_BYTE, image);
     SOIL_free_image_data(image);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
@@ -260,7 +260,7 @@ int main()
 
     screenShader.setInt("screenTexture", 0);
 
-    Model nanosuit("./nanosuit/nanosuit.obj");
+    Model nanosuit("resources/objects/nanosuit/nanosuit.obj");
 
     glEnable(GL_BLEND);
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);

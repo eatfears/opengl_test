@@ -145,12 +145,12 @@ std::vector<glm::vec3> windows = {
 };
 
 std::vector<std::string> faces = {
-    "skybox/lake/right.jpg",
-    "skybox/lake/left.jpg",
-    "skybox/lake/top.jpg",
-    "skybox/lake/bottom.jpg",
-    "skybox/lake/front.jpg",
-    "skybox/lake/back.jpg"
+    "resources/textures/skybox/lake/right.jpg",
+    "resources/textures/skybox/lake/left.jpg",
+    "resources/textures/skybox/lake/top.jpg",
+    "resources/textures/skybox/lake/bottom.jpg",
+    "resources/textures/skybox/lake/front.jpg",
+    "resources/textures/skybox/lake/back.jpg"
 };
 
 #endif // ARRAYS_H
