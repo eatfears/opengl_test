@@ -13,6 +13,7 @@ struct Material
 {
     sampler2D texture_diffuse1;
     sampler2D texture_specular1;
+    sampler2D texture_ambient1;
     float shininess;
 };
 
@@ -60,6 +61,7 @@ struct SpotLight {
 };
 
 uniform SpotLight spotLight;
+uniform bool flashlight;
 
 vec3 CalcDirLight(DirLight light, vec3 normal, vec3 viewDir);
 vec3 CalcPointLight(PointLight light, vec3 normal, vec3 fragPos, vec3 viewDir);
@@ -83,12 +85,15 @@ void main()
     vec3 result;
     result = CalcDirLight(dirLight, norm, viewDir);
 
-    for(int i = 0; i < NR_POINT_LIGHTS; i++)
+    for (int i = 0; i < NR_POINT_LIGHTS; i++)
     {
         result += CalcPointLight(pointLights[i], norm, FragPos, viewDir);
     }
 
-    result += CalcSpotLight(spotLight, norm, FragPos, viewDir);
+    if (flashlight)
+    {
+        result += CalcSpotLight(spotLight, norm, FragPos, viewDir);
+    }
 
 
     vec3 I = normalize(FragPos);
@@ -97,11 +102,14 @@ void main()
     float ratio = 1.00 / 1.52;
     vec3 Ref = mat3(viewInv) * refract(I, normalize(Normal), ratio);
 
-//    result = mix(result, texture(reflectSample, R).rgb, 1.0f);
-//    result = texture(skybox, Ref).rgb;
+
+    vec3 reflection_ratio = texture2D(material.texture_ambient1, TexCoords).rgb;
+    vec3 reflection = reflection_ratio * texture(reflectSample, R).rgb;
+    result += reflection;
+//    result = mix(result, reflection, 0.5f);
+//    result = texture(reflectSample, Ref).rgb;
 //    result = mix(result, texture(reflectSample, R).rgb, 0.2);
 //    result = vec3(LinearizeDepth(gl_FragCoord.z) / zFar);
-
     color = vec4(result, 1.0);
 }
 

@@ -41,6 +41,7 @@ public:
     {
         unsigned int diffuseNr = 1;
         unsigned int specularNr = 1;
+        unsigned int ambientNr = 1;
         for(unsigned int i = 0; i < textures.size(); i++)
         {
             glActiveTexture(GL_TEXTURE0 + i); // активируем текстурный блок, до привязки
@@ -49,9 +50,11 @@ public:
             std::string number;
             std::string name = textures[i].type;
             if(name == "texture_diffuse")
-                ss << diffuseNr++; // передаем unsigned int в stream
+                ss << diffuseNr++;
             else if(name == "texture_specular")
-                ss << specularNr++; // передаем unsigned int в stream
+                ss << specularNr++;
+            else if(name == "texture_ambient")
+                ss << ambientNr++;
             number = ss.str();
 
             shader.setFloat(("material." + name + number).c_str(), i);
@@ -194,12 +197,18 @@ private:
         if(mesh->mMaterialIndex >= 0)
         {
             aiMaterial *material = scene->mMaterials[mesh->mMaterialIndex];
+
             std::vector<Texture> diffuseMaps = loadMaterialTextures(material,
                                                                     aiTextureType_DIFFUSE, "texture_diffuse");
             textures.insert(textures.end(), diffuseMaps.begin(), diffuseMaps.end());
+
             std::vector<Texture> specularMaps = loadMaterialTextures(material,
                                                                      aiTextureType_SPECULAR, "texture_specular");
             textures.insert(textures.end(), specularMaps.begin(), specularMaps.end());
+
+            std::vector<Texture> ambientMaps = loadMaterialTextures(material,
+                                                                     aiTextureType_AMBIENT, "texture_ambient");
+            textures.insert(textures.end(), ambientMaps.begin(), ambientMaps.end());
         }
 
         return Mesh(vertices, indices, textures);

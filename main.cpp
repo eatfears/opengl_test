@@ -42,6 +42,8 @@ bool    keys[1024];
 GLfloat deltaTime = 0.0f;	// Time between current frame and last frame
 GLfloat lastFrame = 0.0f;  	// Time of last frame
 
+bool flashlight = false;
+
 // The MAIN function, from here we start the application and run the game loop
 int main()
 {
@@ -220,7 +222,7 @@ int main()
 
     lightingShader.use();
     lightingShader.setVec3("dirLight.ambient", 0.2f, 0.2f, 0.2f);
-    lightingShader.setVec3("dirLight.diffuse", 1.5f, 1.5f, 1.5f);
+    lightingShader.setVec3("dirLight.diffuse", 2.9f, 2.9f, 2.7f);
     lightingShader.setVec3("dirLight.specular", 1.0f, 1.0f, 1.0f);
 
 
@@ -249,6 +251,8 @@ int main()
     // material properties
     lightingShader.setInt("material.texture_diffuse1", 0);
     lightingShader.setInt("material.texture_specular1", 1);
+    lightingShader.setInt("material.texture_ambient1", 2);
+    lightingShader.setInt("reflectSample", 3);
     lightingShader.setFloat("material.shininess", 64.0f);
 
     Model nanosuit("./nanosuit/nanosuit.obj");
@@ -336,6 +340,8 @@ int main()
         glBindTexture(GL_TEXTURE_2D, boxDiffuseTexture);
         glActiveTexture(GL_TEXTURE1);
         glBindTexture(GL_TEXTURE_2D, boxSpecularTexture);
+        glActiveTexture(GL_TEXTURE2);
+        glBindTexture(GL_TEXTURE_2D, 0);
         glActiveTexture(GL_TEXTURE3);
         glBindTexture(GL_TEXTURE_CUBE_MAP, cubemapTexture);
 
@@ -351,10 +357,12 @@ int main()
         lightingShader.setMat4("view", view);
         lightingShader.setMat4("projection", projection);
 
+
+        lightingShader.setBool("flashlight",  flashlight);
         lightingShader.setVec3("spotLight.position",  glm::vec3(view*glm::vec4(camera.Position, 1.0f)));
         lightingShader.setVec3("spotLight.direction", glm::vec3(view*glm::vec4(camera.Front, 0.0f)));
+
         lightingShader.setMat4("viewInv", glm::inverse(view));
-        lightingShader.setInt("reflectSample", 3);
 
         // Draw the container (using container's vertex attributes)
         glBindVertexArray(containerVAO);
@@ -496,7 +504,11 @@ void key_callback(GLFWwindow* window, int key, int scancode, int action, int mod
     if (key >= 0 && key < 1024)
     {
         if (action == GLFW_PRESS)
+        {
             keys[key] = true;
+            if (key == GLFW_KEY_Q)
+                flashlight = !flashlight;
+        }
         else if (action == GLFW_RELEASE)
             keys[key] = false;
     }
