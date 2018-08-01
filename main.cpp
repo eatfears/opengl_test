@@ -122,6 +122,7 @@ int main()
     Shader lightingShader("./shader.vert", "./shader.frag");
     Shader lampShader("./simpleshader.vert", "./lampshader.frag");
     Shader singleColorShader("./scalingshader.vert", "./singlecolorshader.frag");
+    Shader simpleShader("./simpleshader.vert", "./simpleshader.frag");
     Shader rgbaShader("./shader.vert", "./rgbashader.frag");
     Shader screenShader("./postshader.vert", "./postshader.frag");
     Shader skyboxShader("./skyboxshader.vert", "./skyboxshader.frag");
@@ -261,6 +262,42 @@ int main()
     screenShader.setInt("screenTexture", 0);
 
     Model nanosuit("resources/objects/nanosuit/nanosuit.obj");
+    Model rock("resources/objects/rock/rock.obj");
+    Model planet("resources/objects/planet/planet.obj");
+
+    // generate a large list of semi-random model transformation matrices
+    // ------------------------------------------------------------------
+    unsigned int amount = 1000;
+    glm::mat4* modelMatrices;
+    modelMatrices = new glm::mat4[amount];
+    srand(glfwGetTime()); // initialize random seed
+    float radius = 50.0;
+    float offset = 2.5f;
+    for (unsigned int i = 0; i < amount; i++)
+    {
+        glm::mat4 model(1.0f);
+        model = glm::translate(model, glm::vec3(50.0f, 0.0f, -50.0f));
+        // 1. translation: displace along circle with 'radius' in range [-offset, offset]
+        float angle = (float)i / (float)amount * 360.0f;
+        float displacement = (rand() % (int)(2 * offset * 100)) / 100.0f - offset;
+        float x = sin(angle) * radius + displacement;
+        displacement = (rand() % (int)(2 * offset * 100)) / 100.0f - offset;
+        float y = displacement * 0.4f; // keep height of asteroid field smaller compared to width of x and z
+        displacement = (rand() % (int)(2 * offset * 100)) / 100.0f - offset;
+        float z = cos(angle) * radius + displacement;
+        model = glm::translate(model, glm::vec3(x, y, z));
+
+        // 2. scale: Scale between 0.05 and 0.25f
+        float scale = (rand() % 20) / 100.0f + 0.05;
+        model = glm::scale(model, glm::vec3(scale));
+
+        // 3. rotation: add random rotation around a (semi)randomly picked rotation axis vector
+        float rotAngle = (rand() % 360);
+        model = glm::rotate(model, rotAngle, glm::vec3(0.4f, 0.6f, 0.8f));
+
+        // 4. now add to list of matrices
+        modelMatrices[i] = model;
+    }
 
     glEnable(GL_BLEND);
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
@@ -440,6 +477,18 @@ int main()
         glBindVertexArray(0);
         glActiveTexture(GL_TEXTURE0);
 
+        lightingShader.use();
+        model = glm::translate(glm::mat4(1.0f), glm::vec3(50.0f, -3.0f, -50.0f));
+        model = glm::scale(model, glm::vec3(4.0f, 4.0f, 4.0f));
+        lightingShader.setMat4("model", model);
+        planet.Draw(lightingShader);
+
+        // рендер метеоритов
+        for(unsigned int i = 0; i < amount; i++)
+        {
+            lightingShader.setMat4("model", modelMatrices[i]);
+            rock.Draw(lightingShader);
+        }
 
         model = glm::translate(glm::mat4(1.0f), glm::vec3(0.0f, 0.5f, 0.0f));
         model = glm::scale(model, glm::vec3(0.2f));
