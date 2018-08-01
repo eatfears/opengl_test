@@ -428,7 +428,7 @@ int main()
 
         //Render texture quad
         glBindFramebuffer(GL_FRAMEBUFFER, 0); // возвращаем буфер кадра по умолчанию
-        glClearColor(1.0f, .0f, 1.0f, 1.0f);
+        glClearColor(1.0f, 1.0f, 1.0f, 1.0f);
         glClear(GL_COLOR_BUFFER_BIT);
 
         screenShader.use();
