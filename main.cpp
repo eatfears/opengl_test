@@ -122,16 +122,16 @@ int main()
     Shader skyboxShader("./skyboxshader.vert", "./skyboxshader.frag");
 
     GLuint cubemapTexture = loadCubemap(faces);
-    GLuint texture1, texture2, vegetationTexture, windowsTexture;
-    glGenTextures(1, &texture1);
-    glGenTextures(1, &texture2);
+    GLuint boxDiffuseTexture, boxSpecularTexture, vegetationTexture, windowsTexture;
+    glGenTextures(1, &boxDiffuseTexture);
+    glGenTextures(1, &boxSpecularTexture);
     glGenTextures(1, &vegetationTexture);
     glGenTextures(1, &windowsTexture);
 
     int img_width, img_height;
     unsigned char* image;
 
-    glBindTexture(GL_TEXTURE_2D, texture1);
+    glBindTexture(GL_TEXTURE_2D, boxDiffuseTexture);
     image = SOIL_load_image("map_diffuse.png", &img_width, &img_height, 0, SOIL_LOAD_RGB);
     glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, img_width, img_height, 0, GL_RGB, GL_UNSIGNED_BYTE, image);
     SOIL_free_image_data(image);
@@ -141,7 +141,7 @@ int main()
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
     glGenerateMipmap(GL_TEXTURE_2D);
 
-    glBindTexture(GL_TEXTURE_2D, texture2);
+    glBindTexture(GL_TEXTURE_2D, boxSpecularTexture);
     image = SOIL_load_image("map_specular.png", &img_width, &img_height, 0, SOIL_LOAD_RGB);
     glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, img_width, img_height, 0, GL_RGB, GL_UNSIGNED_BYTE, image);
     SOIL_free_image_data(image);
@@ -333,9 +333,11 @@ int main()
         glBindTexture(GL_TEXTURE_CUBE_MAP, cubemapTexture);
 
         glActiveTexture(GL_TEXTURE0);
-        glBindTexture(GL_TEXTURE_2D, texture1);
+        glBindTexture(GL_TEXTURE_2D, boxDiffuseTexture);
         glActiveTexture(GL_TEXTURE1);
-        glBindTexture(GL_TEXTURE_2D, texture2);
+        glBindTexture(GL_TEXTURE_2D, boxSpecularTexture);
+        glActiveTexture(GL_TEXTURE3);
+        glBindTexture(GL_TEXTURE_CUBE_MAP, cubemapTexture);
 
         lightingShader.use();
         lightingShader.setVec3("dirLight.direction", glm::vec3(view*glm::vec4(-0.3f, -0.5f, -0.2f, 0.0f)));
@@ -351,7 +353,8 @@ int main()
 
         lightingShader.setVec3("spotLight.position",  glm::vec3(view*glm::vec4(camera.Position, 1.0f)));
         lightingShader.setVec3("spotLight.direction", glm::vec3(view*glm::vec4(camera.Front, 0.0f)));
-        lightingShader.setVec3("cameraPos", camera.Position);
+        lightingShader.setMat4("viewInv", glm::inverse(view));
+        lightingShader.setInt("reflectSample", 3);
 
         // Draw the container (using container's vertex attributes)
         glBindVertexArray(containerVAO);

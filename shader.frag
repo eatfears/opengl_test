@@ -5,7 +5,9 @@ in vec3 FragPos;
 in vec3 Normal;
 in vec2 TexCoords;
 
-uniform samplerCube skybox;
+//uniform samplerCube skybox;
+uniform samplerCube reflectSample;
+uniform mat4 viewInv;
 
 struct Material
 {
@@ -73,11 +75,6 @@ float LinearizeDepth(float depth)
     return (2.0 * zNear * zFar) / (zFar + zNear - z * (zFar - zNear));
 }
 
-
-in vec3 Position_world;
-in vec3 Normal_world;
-uniform vec3 cameraPos;
-
 void main()
 {
     vec3 norm = normalize(Normal);
@@ -94,13 +91,18 @@ void main()
     result += CalcSpotLight(spotLight, norm, FragPos, viewDir);
 
 
-    vec3 I = normalize(Position_world - cameraPos);
-    vec3 R = reflect(I, normalize(Normal_world));
+    vec3 I = normalize(FragPos);
+    vec3 R = mat3(viewInv) * reflect(I, normalize(Normal));
 
-    result = texture(skybox, R).rgb;
+    float ratio = 1.00 / 1.52;
+    vec3 Ref = mat3(viewInv) * refract(I, normalize(Normal), ratio);
+
+//    result = mix(result, texture(reflectSample, R).rgb, 1.0f);
+//    result = texture(skybox, Ref).rgb;
+//    result = mix(result, texture(reflectSample, R).rgb, 0.2);
+//    result = vec3(LinearizeDepth(gl_FragCoord.z) / zFar);
 
     color = vec4(result, 1.0);
-//    color  = vec4(vec3(LinearizeDepth(gl_FragCoord.z) / zFar), 1.0);
 }
 
 vec3 CalcDirLight(DirLight light, vec3 normal, vec3 viewDir)
