@@ -216,6 +216,8 @@ private:
     }
     std::vector<Texture> loadMaterialTextures(aiMaterial *mat, aiTextureType type, const std::string &typeName)
     {
+        bool gamma = (typeName == "texture_diffuse");
+
         std::vector<Texture> textures;
         for(unsigned int i = 0; i < mat->GetTextureCount(type); i++)
         {
@@ -235,7 +237,7 @@ private:
             {
                 // если текстура не была загружена – сделаем это
                 Texture texture;
-                texture.id = TextureFromFile(str.C_Str(), directory);
+                texture.id = TextureFromFile(str.C_Str(), directory, gamma);
                 texture.type = typeName;
                 texture.path = str;
                 textures.push_back(texture);
@@ -260,16 +262,24 @@ unsigned int TextureFromFile(const char *path, const std::string &directory, boo
     unsigned char* data = SOIL_load_image(filename.c_str(), &width, &height, &nrComponents, SOIL_LOAD_AUTO);
     if (data)
     {
-        GLenum format;
+        GLenum format, in_format;
         if (nrComponents == 1)
-            format = GL_RED;
+        {
+            format = in_format = GL_RED;
+        }
         else if (nrComponents == 3)
+        {
             format = GL_RGB;
+            gamma ? in_format = GL_SRGB : in_format = GL_RGB;
+        }
         else if (nrComponents == 4)
+        {
             format = GL_RGBA;
+            gamma ? in_format = GL_SRGB_ALPHA : in_format = GL_RGBA;
+        }
 
         glBindTexture(GL_TEXTURE_2D, textureID);
-        glTexImage2D(GL_TEXTURE_2D, 0, format, width, height, 0, format, GL_UNSIGNED_BYTE, data);
+        glTexImage2D(GL_TEXTURE_2D, 0, in_format, width, height, 0, format, GL_UNSIGNED_BYTE, data);
         glGenerateMipmap(GL_TEXTURE_2D);
 
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
@@ -302,15 +312,14 @@ unsigned int loadCubemap(std::vector<std::string> faces)
         if (data)
         {
             glTexImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_X + i,
-                         0, GL_RGB, width, height, 0, GL_RGB, GL_UNSIGNED_BYTE, data
+                         0, GL_SRGB, width, height, 0, GL_RGB, GL_UNSIGNED_BYTE, data
             );
-            SOIL_free_image_data(data);
         }
         else
         {
             std::cout << "Cubemap texture failed to load at path: " << faces[i] << std::endl;
-            SOIL_free_image_data(data);
         }
+        SOIL_free_image_data(data);
     }
     glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
     glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MAG_FILTER, GL_LINEAR);

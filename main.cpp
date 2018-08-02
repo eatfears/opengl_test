@@ -24,10 +24,11 @@
 
 
 // Function prototypes
-void key_callback(GLFWwindow* window, int key, int scancode, int action, int mode);
+void processInput(GLFWwindow *window);
+//void key_callback(GLFWwindow* window, int key, int scancode, int action, int mode);
 void mouse_callback(GLFWwindow* window, double xpos, double ypos);
 void scroll_callback(GLFWwindow* window, double xoffset, double yoffset);
-void do_movement();
+//void do_movement();
 
 // Window dimensions
 const GLuint WIDTH = 1300, HEIGHT = 800;
@@ -44,6 +45,7 @@ GLfloat lastFrame = 0.0f;  	// Time of last frame
 
 bool flashlight = false;
 bool blinn = true;
+bool flashlightKeyPressed = false, blinnKeyPressed = false;
 
 // The MAIN function, from here we start the application and run the game loop
 int main()
@@ -64,7 +66,7 @@ int main()
     glfwMakeContextCurrent(window);
 
     // Set the required callback functions
-    glfwSetKeyCallback(window, key_callback);
+    //glfwSetKeyCallback(window, key_callback);
     glfwSetCursorPosCallback(window, mouse_callback);
     glfwSetScrollCallback(window, scroll_callback);
 
@@ -128,7 +130,7 @@ int main()
     Shader screenShader("./postshader.vert", "./postshader.frag");
     Shader skyboxShader("./skyboxshader.vert", "./skyboxshader.frag");
 
-    GLuint skyboxCubemapTexture = loadCubemap(faces);
+    GLuint skyboxCubemapTexture = loadCubemap(cubemapFaces);
     GLuint boxDiffuseTexture, boxSpecularTexture, vegetationTexture, windowsTexture;
     glGenTextures(1, &boxDiffuseTexture);
     glGenTextures(1, &boxSpecularTexture);
@@ -140,7 +142,7 @@ int main()
 
     glBindTexture(GL_TEXTURE_2D, boxDiffuseTexture);
     image = SOIL_load_image("resources/textures/map_diffuse.png", &img_width, &img_height, 0, SOIL_LOAD_RGB);
-    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, img_width, img_height, 0, GL_RGB, GL_UNSIGNED_BYTE, image);
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_SRGB, img_width, img_height, 0, GL_RGB, GL_UNSIGNED_BYTE, image);
     SOIL_free_image_data(image);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
@@ -160,7 +162,7 @@ int main()
 
     glBindTexture(GL_TEXTURE_2D, vegetationTexture);
     image = SOIL_load_image("resources/textures/grass.png", &img_width, &img_height, 0, SOIL_LOAD_RGBA);
-    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, img_width, img_height, 0, GL_RGBA, GL_UNSIGNED_BYTE, image);
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_SRGB_ALPHA, img_width, img_height, 0, GL_RGBA, GL_UNSIGNED_BYTE, image);
     SOIL_free_image_data(image);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
@@ -170,7 +172,7 @@ int main()
 
     glBindTexture(GL_TEXTURE_2D, windowsTexture);
     image = SOIL_load_image("resources/textures/glass.png", &img_width, &img_height, 0, SOIL_LOAD_RGBA);
-    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, img_width, img_height, 0, GL_RGBA, GL_UNSIGNED_BYTE, image);
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_SRGB_ALPHA, img_width, img_height, 0, GL_RGBA, GL_UNSIGNED_BYTE, image);
     SOIL_free_image_data(image);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
@@ -235,12 +237,12 @@ int main()
     {
         std::string name = "pointLights[" + std::to_string(i) + "]";
         lightingShader.setVec3(name + ".phong.ambient", 0.0f, 0.0f, 0.0f);
-        lightingShader.setVec3(name + ".phong.diffuse", 0.4f, 0.4f, 1.6f);
+        lightingShader.setVec3(name + ".phong.diffuse", 0.4f, 0.5f, 2.8f);
         lightingShader.setVec3(name + ".phong.specular", 1.0f, 1.0f, 1.0f);
 
         lightingShader.setFloat(name + ".attenuation.constant",  1.0f);
-        lightingShader.setFloat(name + ".attenuation.linear",    0.45f);
-        lightingShader.setFloat(name + ".attenuation.quadratic", 0.075f);
+        lightingShader.setFloat(name + ".attenuation.linear",    0.15f);
+        lightingShader.setFloat(name + ".attenuation.quadratic", 0.035f);
     }
 
     lightingShader.setVec3("spotLight.phong.ambient", 0.0f, 0.0f, 0.0f);
@@ -333,7 +335,7 @@ int main()
     glEnable(GL_BLEND);
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
-//#define POSTRENDER
+#define POSTRENDER
 #ifdef POSTRENDER
 
     unsigned int framebuffer;
@@ -405,6 +407,8 @@ int main()
     }
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
 #   endif
+#else
+    glEnable(GL_FRAMEBUFFER_SRGB); // gammacorrection
 #endif
     /********************************************************/
 
@@ -444,9 +448,8 @@ int main()
             frames = time = 0.0;
         }
 
-        // Check if any events have been activiated (key pressed, mouse moved etc.) and call corresponding response functions
-        glfwPollEvents();
-        do_movement();
+        processInput(window);
+        //do_movement();
 
 #ifdef POSTRENDER
         glBindFramebuffer(GL_FRAMEBUFFER, framebuffer);
@@ -498,7 +501,7 @@ int main()
             lightingShader.setVec3("pointLights[" + std::to_string(i) + "].position", glm::vec3(view*glm::vec4(pointLightPositions[i], 1.0f)));
         }
 
-        lightingShader.setVec3("spotLight.position",  glm::vec3(view*glm::vec4(camera.Position, 1.0f)));
+        lightingShader.setVec3("spotLight.position",  glm::vec3(view*glm::vec4(camera.Position, 1.0f)) + glm::vec3(0.2, -0.1, -0.1));
         lightingShader.setVec3("spotLight.direction", glm::vec3(view*glm::vec4(camera.Front, 0.0f)));
 
         lightingShader.setBool("flashlight",  flashlight);
@@ -656,13 +659,17 @@ int main()
         glDisable(GL_DEPTH_TEST);
         glActiveTexture(GL_TEXTURE0);
         glBindTexture(GL_TEXTURE_2D, screenTexture);
+        //glEnable(GL_FRAMEBUFFER_SRGB); // gammacorrection
         glDrawArrays(GL_TRIANGLES, 0, 6);
+        //glDisable(GL_FRAMEBUFFER_SRGB);
         glBindVertexArray(0);
 #endif
         /************************************************/
 
         // Swap the screen buffers
         glfwSwapBuffers(window);
+        // Check if any events have been activiated (key pressed, mouse moved etc.) and call corresponding response functions
+        glfwPollEvents();
     }
 
     // Terminate GLFW, clearing any resources allocated by GLFW.
@@ -670,48 +677,89 @@ int main()
     return 0;
 }
 
-// Is called whenever a key is pressed/released via GLFW
-void key_callback(GLFWwindow* window, int key, int scancode, int action, int mode)
+
+void processInput(GLFWwindow *window)
 {
-    if (key == GLFW_KEY_ESCAPE && action == GLFW_PRESS)
-        glfwSetWindowShouldClose(window, GL_TRUE);
-    if (key >= 0 && key < 1024)
+    if (glfwGetKey(window, GLFW_KEY_ESCAPE) == GLFW_PRESS)
+        glfwSetWindowShouldClose(window, true);
+
+    if (glfwGetKey(window, GLFW_KEY_W) == GLFW_PRESS)
+        camera.processKeyboard(FORWARD, deltaTime);
+    if (glfwGetKey(window, GLFW_KEY_S) == GLFW_PRESS)
+        camera.processKeyboard(BACKWARD, deltaTime);
+    if (glfwGetKey(window, GLFW_KEY_A) == GLFW_PRESS)
+        camera.processKeyboard(LEFT, deltaTime);
+    if (glfwGetKey(window, GLFW_KEY_D) == GLFW_PRESS)
+        camera.processKeyboard(RIGHT, deltaTime);
+    if (glfwGetKey(window, GLFW_KEY_R) == GLFW_PRESS)
+        camera.processKeyboard(UP, deltaTime);
+    if (glfwGetKey(window, GLFW_KEY_F) == GLFW_PRESS)
+        camera.processKeyboard(DOWN, deltaTime);
+
+    if (glfwGetKey(window, GLFW_KEY_Q) == GLFW_PRESS && !flashlightKeyPressed)
     {
-        if (action == GLFW_PRESS)
-        {
-            keys[key] = true;
-            if (key == GLFW_KEY_Q)
-            {
-                flashlight = !flashlight;
-                std::cout << "Flashlight " << flashlight << std::endl;
-            }
-            if (key == GLFW_KEY_B)
-            {
-                blinn = !blinn;
-                std::cout << "Blinn " << blinn << std::endl;
-            }
-        }
-        else if (action == GLFW_RELEASE)
-            keys[key] = false;
+        flashlight = !flashlight;
+        std::cout << "Flashlight " << flashlight << std::endl;
+        flashlightKeyPressed = true;
+    }
+    if (glfwGetKey(window, GLFW_KEY_Q) == GLFW_RELEASE)
+    {
+        flashlightKeyPressed = false;
+    }
+
+    if (glfwGetKey(window, GLFW_KEY_B) == GLFW_PRESS && !blinnKeyPressed)
+    {
+        blinn = !blinn;
+        std::cout << "Blinn " << blinn << std::endl;
+        blinnKeyPressed = true;
+    }
+    if (glfwGetKey(window, GLFW_KEY_B) == GLFW_RELEASE)
+    {
+        blinnKeyPressed = false;
     }
 }
+// Is called whenever a key is pressed/released via GLFW
+//void key_callback(GLFWwindow* window, int key, int scancode, int action, int mode)
+//{
+//    if (key == GLFW_KEY_ESCAPE && action == GLFW_PRESS)
+//        glfwSetWindowShouldClose(window, GL_TRUE);
+//    if (key >= 0 && key < 1024)
+//    {
+//        if (action == GLFW_PRESS)
+//        {
+//            keys[key] = true;
+//            if (key == GLFW_KEY_Q)
+//            {
+//                flashlight = !flashlight;
+//                std::cout << "Flashlight " << flashlight << std::endl;
+//            }
+//            if (key == GLFW_KEY_B)
+//            {
+//                blinn = !blinn;
+//                std::cout << "Blinn " << blinn << std::endl;
+//            }
+//        }
+//        else if (action == GLFW_RELEASE)
+//            keys[key] = false;
+//    }
+//}
 
-void do_movement()
-{
-    // Camera controls
-    if (keys[GLFW_KEY_W])
-        camera.processKeyboard(FORWARD, deltaTime);
-    if (keys[GLFW_KEY_S])
-        camera.processKeyboard(BACKWARD, deltaTime);
-    if (keys[GLFW_KEY_A])
-        camera.processKeyboard(LEFT, deltaTime);
-    if (keys[GLFW_KEY_D])
-        camera.processKeyboard(RIGHT, deltaTime);
-    if (keys[GLFW_KEY_R])
-        camera.processKeyboard(UP, deltaTime);
-    if (keys[GLFW_KEY_F])
-        camera.processKeyboard(DOWN, deltaTime);
-}
+//void do_movement()
+//{
+//    // Camera controls
+//    if (keys[GLFW_KEY_W])
+//        camera.processKeyboard(FORWARD, deltaTime);
+//    if (keys[GLFW_KEY_S])
+//        camera.processKeyboard(BACKWARD, deltaTime);
+//    if (keys[GLFW_KEY_A])
+//        camera.processKeyboard(LEFT, deltaTime);
+//    if (keys[GLFW_KEY_D])
+//        camera.processKeyboard(RIGHT, deltaTime);
+//    if (keys[GLFW_KEY_R])
+//        camera.processKeyboard(UP, deltaTime);
+//    if (keys[GLFW_KEY_F])
+//        camera.processKeyboard(DOWN, deltaTime);
+//}
 
 bool firstMouse = true;
 void mouse_callback(GLFWwindow* window, double xpos, double ypos)

@@ -8,6 +8,7 @@ uniform sampler2D screenTexture;
 const float offset = 1.0 / 300.0;
 const float gray = 0.4;
 const float strength = 0.2;
+const float gamma = 2.2; //2.2
 
 void main()
 {
@@ -61,4 +62,7 @@ void main()
     float average = (color2.r + color2.g + color2.b) / 3.0;
 
     color = vec4(average, average, average, 1.0)*gray + color2*(1.0 - gray);
+
+    // применяем гамма-коррекцию
+    color.rgb = pow(color.rgb, vec3(1.0/gamma));
 }

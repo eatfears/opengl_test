@@ -146,8 +146,13 @@ Phong CalcPhong(Phong light, vec3 normal, vec3 viewDir, vec3 lightDir)
 float CalcAttenuation(Attenuation attenuation, float distance)
 {
     // затухание
-    return 1.0 / (attenuation.constant + attenuation.linear * distance +
+    float ret = 1.0 / (attenuation.constant + attenuation.linear * distance +
                   attenuation.quadratic * (distance * distance));
+    if (true) //gamma
+    {
+        ret = ret*ret;
+    }
+    return ret;
 }
 
 vec3 CalcDirLight(DirLight light, vec3 normal, vec3 viewDir)

@@ -144,7 +144,7 @@ std::vector<glm::vec3> windows = {
     glm::vec3( 0.5f,  -1.0f, -0.6f),
 };
 
-std::vector<std::string> faces = {
+std::vector<std::string> cubemapFaces = {
     "resources/textures/skybox/lake/right.jpg",
     "resources/textures/skybox/lake/left.jpg",
     "resources/textures/skybox/lake/top.jpg",
