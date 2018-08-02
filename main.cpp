@@ -131,10 +131,20 @@ int main()
     Shader skyboxShader("./skyboxshader.vert", "./skyboxshader.frag");
 
     GLuint boxDiffuseTexture, boxSpecularTexture, vegetationTexture, windowsTexture, skyboxCubemapTexture;
-    boxDiffuseTexture = TextureFromFile("resources/textures/map_diffuse.png", true);
-    boxSpecularTexture = TextureFromFile("resources/textures/map_specular.png", true);
+    boxDiffuseTexture = TextureFromFile("resources/textures/container2.png", true);
+    boxSpecularTexture = TextureFromFile("resources/textures/container2_specular.png", true);
     vegetationTexture = TextureFromFile("resources/textures/grass.png", true, GL_CLAMP_TO_EDGE);
-    windowsTexture = TextureFromFile("resources/textures/glass.png", true, GL_CLAMP_TO_EDGE);
+    windowsTexture = TextureFromFile("resources/textures/window.png", true, GL_CLAMP_TO_EDGE);
+
+    GLuint bricks, bricksDisp, bricksNormal;
+    bricks = TextureFromFile("resources/textures/bricks2.jpg", true);
+    bricksDisp = TextureFromFile("resources/textures/bricks2_disp.jpg", true);
+    bricksNormal = TextureFromFile("resources/textures/bricks2_normal.jpg", true);
+
+    GLuint brickwall, brickwallNormal;
+    brickwall = TextureFromFile("resources/textures/brickwall.jpg", true);
+    brickwallNormal = TextureFromFile("resources/textures/brickwall_normal.jpg", true);
+
     skyboxCubemapTexture = loadCubemap(cubemapFaces);
 
     /*********************************************************************************/
