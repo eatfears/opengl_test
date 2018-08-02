@@ -514,6 +514,7 @@ int main()
         // рендер метеоритов
 #define INSTANCE
 #ifdef INSTANCE
+        lightingShader.setFloat("time", currentFrame);
         lightingShader.setBool("instance", true);
         lightingShader.setInt("material.texture_diffuse1", 0);
         glActiveTexture(GL_TEXTURE0);
