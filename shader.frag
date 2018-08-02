@@ -8,6 +8,8 @@ in vec2 TexCoords;
 uniform samplerCube reflectSample;
 uniform mat4 viewInv;
 
+uniform bool blinn;
+
 struct Material
 {
     sampler2D texture_diffuse1;
@@ -120,8 +122,19 @@ Phong CalcPhong(Phong light, vec3 normal, vec3 viewDir, vec3 lightDir)
     float diff = max(dot(normal, lightDir), 0.0);
 
     // освещение зеркальных бликов
-    vec3 reflectDir = reflect(-lightDir, normal);
-    float spec = pow(max(dot(viewDir, reflectDir), 0.0), material.shininess);
+    float spec = 0.0f;
+
+    if (blinn)
+    {
+        //blinn
+        vec3 halfwayDir = normalize(lightDir + viewDir);
+        spec = pow(max(dot(normal, halfwayDir), 0.0), material.shininess*3);
+    }
+    else
+    {
+        vec3 reflectDir = reflect(-lightDir, normal);
+        spec = pow(max(dot(viewDir, reflectDir), 0.0), material.shininess);
+    }
 
     Phong p;
     p.ambient  = light.ambient  * 1.0f * vec3(texture2D(material.texture_diffuse1, TexCoords));

@@ -43,11 +43,13 @@ GLfloat deltaTime = 0.0f;	// Time between current frame and last frame
 GLfloat lastFrame = 0.0f;  	// Time of last frame
 
 bool flashlight = false;
+bool blinn = true;
 
 // The MAIN function, from here we start the application and run the game loop
 int main()
 {
     int rc;
+    std::cout << std::boolalpha;
     // Init GLFW
     glfwInit();
     // Set all the required options for GLFW
@@ -496,10 +498,11 @@ int main()
             lightingShader.setVec3("pointLights[" + std::to_string(i) + "].position", glm::vec3(view*glm::vec4(pointLightPositions[i], 1.0f)));
         }
 
-
-        lightingShader.setBool("flashlight",  flashlight);
         lightingShader.setVec3("spotLight.position",  glm::vec3(view*glm::vec4(camera.Position, 1.0f)));
         lightingShader.setVec3("spotLight.direction", glm::vec3(view*glm::vec4(camera.Front, 0.0f)));
+
+        lightingShader.setBool("flashlight",  flashlight);
+        lightingShader.setBool("blinn",  blinn);
 
         lightingShader.setMat4("viewInv", glm::inverse(view));
 
@@ -678,7 +681,15 @@ void key_callback(GLFWwindow* window, int key, int scancode, int action, int mod
         {
             keys[key] = true;
             if (key == GLFW_KEY_Q)
+            {
                 flashlight = !flashlight;
+                std::cout << "Flashlight " << flashlight << std::endl;
+            }
+            if (key == GLFW_KEY_B)
+            {
+                blinn = !blinn;
+                std::cout << "Blinn " << blinn << std::endl;
+            }
         }
         else if (action == GLFW_RELEASE)
             keys[key] = false;
