@@ -13,8 +13,8 @@ layout (std140) uniform Matrices
 uniform mat4 model;
 
 uniform bool instance;
-
 uniform float time;
+uniform mat4 planet_model;
 
 out vec3 FragPos;
 out vec3 Normal;
@@ -33,6 +33,7 @@ mat4 rotationMatrix(vec3 axis, float angle)
                 0.0,                                0.0,                                0.0,                                1.0);
 }
 
+
 void main()
 {
     mat4 model_loc = model;
@@ -42,6 +43,13 @@ void main()
 
         vec3 axis = vec3(sin(gl_InstanceID), sin(gl_InstanceID), cos(gl_InstanceID));
         model_loc = model_loc * rotationMatrix(normalize(axis), time);
+
+        vec3 direction = vec3(0.0, 0.0, 0.0);
+        vec3 transformed_direction = vec3(aInstanceMatrix * vec4(direction, 1.0));
+        float f = 5.0/length(transformed_direction);
+        model_loc = rotationMatrix(vec3(0.0, 1.0, 0.0), f*f*time/2) * model_loc;
+
+        model_loc = planet_model * model_loc;
     }
 
     FragPos = vec3(view * model_loc * vec4(aPosition, 1.0f));

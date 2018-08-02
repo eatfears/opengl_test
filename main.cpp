@@ -235,7 +235,8 @@ int main()
     for (unsigned int i = 0; i < amount; i++)
     {
         glm::mat4 model(1.0f);
-        model = glm::translate(model, glm::vec3(50.0f, 0.0f, -50.0f));
+//        model = glm::translate(model, glm::vec3(50.0f, 0.0f, -50.0f));
+        lightingShader.setMat4("planet_model", glm::translate(glm::mat4(1.0f), glm::vec3(50.0f, 0.0f, -50.0f)));
         // 1. translation: displace along circle with 'radius' in range [-offset, offset]
         float angle = (float)i / (float)amount * 360.0f;
         float displacement = (rand() % (int)(2 * offset * 100)) / 100.0f - offset;
@@ -259,9 +260,9 @@ int main()
     }
 
     // создаем VBO
-    unsigned int buffer;
-    glGenBuffers(1, &buffer);
-    glBindBuffer(GL_ARRAY_BUFFER, buffer);
+    unsigned int rockMatriciesBuffer;
+    glGenBuffers(1, &rockMatriciesBuffer);
+    glBindBuffer(GL_ARRAY_BUFFER, rockMatriciesBuffer);
     glBufferData(GL_ARRAY_BUFFER, amount * sizeof(glm::mat4), &modelMatrices[0], GL_STATIC_DRAW);
 
     for(unsigned int i = 0; i < rock.meshes.size(); i++)
@@ -286,6 +287,8 @@ int main()
 
         glBindVertexArray(0);
     }
+    glBindBuffer(GL_ARRAY_BUFFER, 0);
+
 
     glEnable(GL_BLEND);
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
