@@ -126,7 +126,7 @@ int main()
     Shader screenShader("./postshader.vert", "./postshader.frag");
     Shader skyboxShader("./skyboxshader.vert", "./skyboxshader.frag");
 
-    GLuint cubemapTexture = loadCubemap(faces);
+    GLuint skyboxCubemapTexture = loadCubemap(faces);
     GLuint boxDiffuseTexture, boxSpecularTexture, vegetationTexture, windowsTexture;
     glGenTextures(1, &boxDiffuseTexture);
     glGenTextures(1, &boxSpecularTexture);
@@ -224,29 +224,29 @@ int main()
     glBindVertexArray(0);
 
     lightingShader.use();
-    lightingShader.setVec3("dirLight.ambient", 0.2f, 0.2f, 0.2f);
-    lightingShader.setVec3("dirLight.diffuse", 2.9f, 2.9f, 2.7f);
-    lightingShader.setVec3("dirLight.specular", 1.0f, 1.0f, 1.0f);
+    lightingShader.setVec3("dirLight.phong.ambient", 0.2f, 0.2f, 0.2f);
+    lightingShader.setVec3("dirLight.phong.diffuse", 2.9f, 2.9f, 2.7f);
+    lightingShader.setVec3("dirLight.phong.specular", 1.0f, 1.0f, 1.0f);
 
 
     for (int i = 0; i < 4; ++i)
     {
         std::string name = "pointLights[" + std::to_string(i) + "]";
-        lightingShader.setVec3(name + ".ambient", 0.0f, 0.0f, 0.0f);
-        lightingShader.setVec3(name + ".diffuse", 0.4f, 0.4f, 1.6f);
-        lightingShader.setVec3(name + ".specular", 1.0f, 1.0f, 1.0f);
+        lightingShader.setVec3(name + ".phong.ambient", 0.0f, 0.0f, 0.0f);
+        lightingShader.setVec3(name + ".phong.diffuse", 0.4f, 0.4f, 1.6f);
+        lightingShader.setVec3(name + ".phong.specular", 1.0f, 1.0f, 1.0f);
 
-        lightingShader.setFloat(name + ".constant",  1.0f);
-        lightingShader.setFloat(name + ".linear",    0.45f);
-        lightingShader.setFloat(name + ".quadratic", 0.075f);
+        lightingShader.setFloat(name + ".attenuation.constant",  1.0f);
+        lightingShader.setFloat(name + ".attenuation.linear",    0.45f);
+        lightingShader.setFloat(name + ".attenuation.quadratic", 0.075f);
     }
 
-    lightingShader.setVec3("spotLight.ambient", 0.0f, 0.0f, 0.0f);
-    lightingShader.setVec3("spotLight.diffuse", 0.9f, 0.8f, 0.9f);
-    lightingShader.setVec3("spotLight.specular", 1.0f, 1.0f, 1.0f);
-    lightingShader.setFloat("spotLight.constant",  1.0f);
-    lightingShader.setFloat("spotLight.linear",    0.045f);
-    lightingShader.setFloat("spotLight.quadratic", 0.0075f);
+    lightingShader.setVec3("spotLight.phong.ambient", 0.0f, 0.0f, 0.0f);
+    lightingShader.setVec3("spotLight.phong.diffuse", 0.9f, 0.8f, 0.9f);
+    lightingShader.setVec3("spotLight.phong.specular", 1.0f, 1.0f, 1.0f);
+    lightingShader.setFloat("spotLight.attenuation.constant",  1.0f);
+    lightingShader.setFloat("spotLight.attenuation.linear",    0.045f);
+    lightingShader.setFloat("spotLight.attenuation.quadratic", 0.0075f);
     lightingShader.setFloat("spotLight.cutOff",   glm::cos(glm::radians(12.5f)));
     lightingShader.setFloat("spotLight.outerCutOff",   glm::cos(glm::radians(16.5f)));
 
@@ -272,7 +272,7 @@ int main()
     modelMatrices = new glm::mat4[amount];
     srand(glfwGetTime()); // initialize random seed
     float radius = 35.0;
-    float offset = 5.5f;
+    float offset = 7.5f;
     for (unsigned int i = 0; i < amount; i++)
     {
         glm::mat4 model(1.0f);
@@ -282,13 +282,13 @@ int main()
         float displacement = (rand() % (int)(2 * offset * 100)) / 100.0f - offset;
         float x = sin(angle) * radius + displacement;
         displacement = (rand() % (int)(2 * offset * 100)) / 100.0f - offset;
-        float y = displacement * 0.1f; // keep height of asteroid field smaller compared to width of x and z
+        float y = displacement * 0.03f; // keep height of asteroid field smaller compared to width of x and z
         displacement = (rand() % (int)(2 * offset * 100)) / 100.0f - offset;
         float z = cos(angle) * radius + displacement;
         model = glm::translate(model, glm::vec3(x, y, z));
 
-        // 2. scale: Scale between 0.05 and 0.25f
-        float scale = (rand() % 20) / 200.0f + 0.05;
+        // 2. scale
+        float scale = (rand() % 5) / 100.0f + 0.03;
         model = glm::scale(model, glm::vec3(scale));
 
         // 3. rotation: add random rotation around a (semi)randomly picked rotation axis vector
@@ -331,7 +331,7 @@ int main()
     glEnable(GL_BLEND);
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
-#define POSTRENDER
+//#define POSTRENDER
 #ifdef POSTRENDER
 
     unsigned int framebuffer;
@@ -422,6 +422,10 @@ int main()
     glBindBufferRange(GL_UNIFORM_BUFFER, 0, uboMatrices, 0, 2 * sizeof(glm::mat4));
     /********************************************************/
 
+    //glfwWindowHint(GLFW_DOUBLEBUFFER, GL_FALSE);
+    glfwSwapInterval(0);
+    GLfloat frames = 0, time = 0;
+
     // Game loop
     while (!glfwWindowShouldClose(window))
     {
@@ -429,6 +433,14 @@ int main()
         GLfloat currentFrame = glfwGetTime();
         deltaTime = currentFrame - lastFrame;
         lastFrame = currentFrame;
+        frames++;
+        time += deltaTime;
+
+        if (time > 2.0)
+        {
+            std::cout << frames/time << " FPS" << std::endl;
+            frames = time = 0.0;
+        }
 
         // Check if any events have been activiated (key pressed, mouse moved etc.) and call corresponding response functions
         glfwPollEvents();
@@ -465,7 +477,7 @@ int main()
 //        glStencilMask(0x00);
 
 
-        glBindTexture(GL_TEXTURE_CUBE_MAP, cubemapTexture);
+        glBindTexture(GL_TEXTURE_CUBE_MAP, skyboxCubemapTexture);
 
         glActiveTexture(GL_TEXTURE0);
         glBindTexture(GL_TEXTURE_2D, boxDiffuseTexture);
@@ -474,7 +486,7 @@ int main()
         glActiveTexture(GL_TEXTURE2);
         glBindTexture(GL_TEXTURE_2D, 0);
         glActiveTexture(GL_TEXTURE3);
-        glBindTexture(GL_TEXTURE_CUBE_MAP, cubemapTexture);
+        glBindTexture(GL_TEXTURE_CUBE_MAP, skyboxCubemapTexture);
 
         lightingShader.use();
         lightingShader.setVec3("dirLight.direction", glm::vec3(view*glm::vec4(-0.3f, -0.5f, -0.2f, 0.0f)));
@@ -507,7 +519,7 @@ int main()
         glActiveTexture(GL_TEXTURE0);
 
         lightingShader.use();
-        model = glm::translate(glm::mat4(1.0f), glm::vec3(50.0f, -3.0f, -50.0f));
+        model = glm::translate(glm::mat4(1.0f), glm::vec3(50.0f, -4.0f, -50.0f));
         model = glm::scale(model, glm::vec3(4.0f, 4.0f, 4.0f));
         lightingShader.setMat4("model", model);
         planet.Draw(lightingShader);
@@ -575,7 +587,7 @@ int main()
         glDepthMask(GL_FALSE);
         skyboxShader.use();
         glBindVertexArray(skyboxVAO);
-        glBindTexture(GL_TEXTURE_CUBE_MAP, cubemapTexture);
+        glBindTexture(GL_TEXTURE_CUBE_MAP, skyboxCubemapTexture);
         glDrawArrays(GL_TRIANGLES, 0, 36);
         glDepthMask(GL_TRUE);
         glBindTexture(GL_TEXTURE_CUBE_MAP, 0);
