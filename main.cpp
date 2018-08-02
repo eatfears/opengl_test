@@ -130,57 +130,12 @@ int main()
     Shader screenShader("./postshader.vert", "./postshader.frag");
     Shader skyboxShader("./skyboxshader.vert", "./skyboxshader.frag");
 
-    GLuint skyboxCubemapTexture = loadCubemap(cubemapFaces);
-    GLuint boxDiffuseTexture, boxSpecularTexture, vegetationTexture, windowsTexture;
-    glGenTextures(1, &boxDiffuseTexture);
-    glGenTextures(1, &boxSpecularTexture);
-    glGenTextures(1, &vegetationTexture);
-    glGenTextures(1, &windowsTexture);
-
-    int img_width, img_height;
-    unsigned char* image;
-
-    glBindTexture(GL_TEXTURE_2D, boxDiffuseTexture);
-    image = SOIL_load_image("resources/textures/map_diffuse.png", &img_width, &img_height, 0, SOIL_LOAD_RGB);
-    glTexImage2D(GL_TEXTURE_2D, 0, GL_SRGB, img_width, img_height, 0, GL_RGB, GL_UNSIGNED_BYTE, image);
-    SOIL_free_image_data(image);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-    glGenerateMipmap(GL_TEXTURE_2D);
-
-    glBindTexture(GL_TEXTURE_2D, boxSpecularTexture);
-    image = SOIL_load_image("resources/textures/map_specular.png", &img_width, &img_height, 0, SOIL_LOAD_RGB);
-    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, img_width, img_height, 0, GL_RGB, GL_UNSIGNED_BYTE, image);
-    SOIL_free_image_data(image);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-    glGenerateMipmap(GL_TEXTURE_2D);
-
-    glBindTexture(GL_TEXTURE_2D, vegetationTexture);
-    image = SOIL_load_image("resources/textures/grass.png", &img_width, &img_height, 0, SOIL_LOAD_RGBA);
-    glTexImage2D(GL_TEXTURE_2D, 0, GL_SRGB_ALPHA, img_width, img_height, 0, GL_RGBA, GL_UNSIGNED_BYTE, image);
-    SOIL_free_image_data(image);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-    glGenerateMipmap(GL_TEXTURE_2D);
-
-    glBindTexture(GL_TEXTURE_2D, windowsTexture);
-    image = SOIL_load_image("resources/textures/glass.png", &img_width, &img_height, 0, SOIL_LOAD_RGBA);
-    glTexImage2D(GL_TEXTURE_2D, 0, GL_SRGB_ALPHA, img_width, img_height, 0, GL_RGBA, GL_UNSIGNED_BYTE, image);
-    SOIL_free_image_data(image);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-    glGenerateMipmap(GL_TEXTURE_2D);
-
-    glBindTexture(GL_TEXTURE_2D, 0);
+    GLuint boxDiffuseTexture, boxSpecularTexture, vegetationTexture, windowsTexture, skyboxCubemapTexture;
+    boxDiffuseTexture = TextureFromFile("resources/textures/map_diffuse.png", true);
+    boxSpecularTexture = TextureFromFile("resources/textures/map_specular.png", true);
+    vegetationTexture = TextureFromFile("resources/textures/grass.png", true, GL_CLAMP_TO_EDGE);
+    windowsTexture = TextureFromFile("resources/textures/glass.png", true, GL_CLAMP_TO_EDGE);
+    skyboxCubemapTexture = loadCubemap(cubemapFaces);
 
     /*********************************************************************************/
 

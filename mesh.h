@@ -102,7 +102,7 @@ private:
 };
 
 
-unsigned int TextureFromFile(const char *path, const std::string &directory, bool gamma = false);
+unsigned int TextureFromFile(const std::string &path, bool gamma = false, GLuint clamp = GL_REPEAT);
 
 class Model
 {
@@ -237,7 +237,7 @@ private:
             {
                 // если текстура не была загружена – сделаем это
                 Texture texture;
-                texture.id = TextureFromFile(str.C_Str(), directory, gamma);
+                texture.id = TextureFromFile(directory + "/" + str.C_Str(), gamma);
                 texture.type = typeName;
                 texture.path = str;
                 textures.push_back(texture);
@@ -250,16 +250,13 @@ private:
 };
 
 
-unsigned int TextureFromFile(const char *path, const std::string &directory, bool gamma)
+unsigned int TextureFromFile(const std::string &path, bool gamma, GLuint clamp)
 {
-    std::string filename(path);
-    filename = directory + '/' + filename;
-
     unsigned int textureID;
     glGenTextures(1, &textureID);
 
     int width, height, nrComponents;
-    unsigned char* data = SOIL_load_image(filename.c_str(), &width, &height, &nrComponents, SOIL_LOAD_AUTO);
+    unsigned char* data = SOIL_load_image(path.c_str(), &width, &height, &nrComponents, SOIL_LOAD_AUTO);
     if (data)
     {
         GLenum format, in_format;
@@ -282,8 +279,8 @@ unsigned int TextureFromFile(const char *path, const std::string &directory, boo
         glTexImage2D(GL_TEXTURE_2D, 0, in_format, width, height, 0, format, GL_UNSIGNED_BYTE, data);
         glGenerateMipmap(GL_TEXTURE_2D);
 
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, clamp);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, clamp);
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 
