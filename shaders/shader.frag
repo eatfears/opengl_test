@@ -5,9 +5,7 @@ in vec3 FragPos;
 in vec3 Normal;
 in vec2 TexCoords;
 
-uniform samplerCube reflectSample;
 uniform mat4 viewInv;
-
 uniform bool blinn;
 
 struct Material
@@ -15,11 +13,14 @@ struct Material
     sampler2D texture_diffuse1;
     sampler2D texture_specular1;
     sampler2D texture_ambient1;
+    sampler2D texture_bump1;
+    sampler2D texture_displ1;
     float shininess;
     sampler2D texture_diffuse2;
 };
-
 uniform Material material;
+
+uniform samplerCube reflectSample;
 
 struct Phong {
     vec3 ambient;

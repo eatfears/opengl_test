@@ -42,6 +42,9 @@ public:
         unsigned int diffuseNr = 1;
         unsigned int specularNr = 1;
         unsigned int ambientNr = 1;
+        unsigned int bumpNr = 1;
+        unsigned int displNr = 1;
+
         for(unsigned int i = 0; i < textures.size(); i++)
         {
             glActiveTexture(GL_TEXTURE0 + i); // активируем текстурный блок, до привязки
@@ -55,6 +58,10 @@ public:
                 ss << specularNr++;
             else if(name == "texture_ambient")
                 ss << ambientNr++;
+            else if(name == "texture_bump")
+                ss << bumpNr++;
+            else if(name == "texture_displ")
+                ss << displNr++;
             number = ss.str();
 
             shader.setFloat(("material." + name + number).c_str(), i);
@@ -208,8 +215,16 @@ private:
             textures.insert(textures.end(), specularMaps.begin(), specularMaps.end());
 
             std::vector<Texture> ambientMaps = loadMaterialTextures(material,
-                                                                     aiTextureType_AMBIENT, "texture_ambient");
+                                                                    aiTextureType_AMBIENT, "texture_ambient");
             textures.insert(textures.end(), ambientMaps.begin(), ambientMaps.end());
+
+            std::vector<Texture> bumpMaps = loadMaterialTextures(material,
+                                                                 aiTextureType_NORMALS, "texture_bump");
+            textures.insert(textures.end(), bumpMaps.begin(), bumpMaps.end());
+
+            std::vector<Texture> displMaps = loadMaterialTextures(material,
+                                                                  aiTextureType_DISPLACEMENT, "texture_displ");
+            textures.insert(textures.end(), displMaps.begin(), displMaps.end());
         }
 
         return Mesh(vertices, indices, textures);

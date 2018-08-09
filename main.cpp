@@ -15,13 +15,14 @@
 #include <glm/gtc/matrix_transform.hpp>
 #include <glm/gtc/type_ptr.hpp>
 
+
 // Other includes
 #include "shader.h"
 #include "camera.h"
 #include "mesh.h"
 
 #include "arrays.h"
-
+#include "gui/gui.h"
 
 // Function prototypes
 void processInput(GLFWwindow *window);
@@ -85,6 +86,8 @@ int main()
     glEnable(GL_DEPTH_TEST);
     glEnable(GL_MULTISAMPLE);
 
+    Gui gui(window, "#version 330");
+
 //#define REVERSE_Z
 #ifdef REVERSE_Z
 
@@ -123,12 +126,12 @@ int main()
     /***********************************************************/
 
     // Build and compile our shader program
-    Shader lightingShader("./shader.vert", "./shader.frag");
-    Shader lampShader("./simpleshader.vert", "./lampshader.frag");
-    Shader singleColorShader("./scalingshader.vert", "./singlecolorshader.frag");
-    Shader rgbaShader("./shader.vert", "./rgbashader.frag");
-    Shader screenShader("./postshader.vert", "./postshader.frag");
-    Shader skyboxShader("./skyboxshader.vert", "./skyboxshader.frag");
+    Shader lightingShader("./shaders/shader.vert", "./shaders/shader.frag");
+    Shader lampShader("./shaders/simpleshader.vert", "./shaders/lampshader.frag");
+    Shader singleColorShader("./shaders/scalingshader.vert", "./shaders/singlecolorshader.frag");
+    Shader rgbaShader("./shaders/shader.vert", "./shaders/rgbashader.frag");
+    Shader screenShader("./shaders/postshader.vert", "./shaders/postshader.frag");
+    Shader skyboxShader("./shaders/skyboxshader.vert", "./shaders/skyboxshader.frag");
 
     GLuint boxDiffuseTexture, boxSpecularTexture, vegetationTexture, windowsTexture, skyboxCubemapTexture;
     boxDiffuseTexture = TextureFromFile("resources/textures/container2.png", true);
@@ -224,7 +227,9 @@ int main()
     lightingShader.setInt("material.texture_diffuse1", 0);
     lightingShader.setInt("material.texture_specular1", 1);
     lightingShader.setInt("material.texture_ambient1", 2);
-    lightingShader.setInt("reflectSample", 3);
+    lightingShader.setInt("material.texture_bump1", 3);
+    lightingShader.setInt("material.texture_displ1", 4);
+    lightingShader.setInt("reflectSample", 15);
     lightingShader.setFloat("material.shininess", 64.0f);
     lightingShader.setBool("instance", false);
 
@@ -236,7 +241,7 @@ int main()
 
     // generate a large list of semi-random model transformation matrices
     // ------------------------------------------------------------------
-    unsigned int amount = 5000;
+    unsigned int amount = 500;
     glm::mat4* modelMatrices;
     modelMatrices = new glm::mat4[amount];
     srand(glfwGetTime()); // initialize random seed
@@ -303,7 +308,7 @@ int main()
     glEnable(GL_BLEND);
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
-#define POSTRENDER
+//#define POSTRENDER
 #ifdef POSTRENDER
 
     unsigned int framebuffer;
@@ -424,24 +429,17 @@ int main()
     /********************************************************/
     //glfwWindowHint(GLFW_DOUBLEBUFFER, GL_FALSE);
     glfwSwapInterval(0);
-    GLfloat frames = 0, time = 0;
     /********************************************************/
 
     // Game loop
     while (!glfwWindowShouldClose(window))
     {
+        glfwPollEvents();
+
         // Calculate deltatime of current frame
         GLfloat currentFrame = glfwGetTime();
         deltaTime = currentFrame - lastFrame;
         lastFrame = currentFrame;
-        frames++;
-        time += deltaTime;
-
-        if (time > 2.0)
-        {
-            std::cout << frames/time << " FPS" << std::endl;
-            frames = time = 0.0;
-        }
 
         processInput(window);
         //do_movement();
@@ -475,9 +473,6 @@ int main()
 //        glStencilOp(GL_KEEP, GL_REPLACE, GL_REPLACE);
 //        glStencilMask(0x00);
 
-
-        glBindTexture(GL_TEXTURE_CUBE_MAP, skyboxCubemapTexture);
-
         glActiveTexture(GL_TEXTURE0);
         glBindTexture(GL_TEXTURE_2D, boxDiffuseTexture);
         glActiveTexture(GL_TEXTURE1);
@@ -485,7 +480,12 @@ int main()
         glActiveTexture(GL_TEXTURE2);
         glBindTexture(GL_TEXTURE_2D, 0);
         glActiveTexture(GL_TEXTURE3);
+        glBindTexture(GL_TEXTURE_2D, 0);
+        glActiveTexture(GL_TEXTURE4);
+        glBindTexture(GL_TEXTURE_2D, 0);
+        glActiveTexture(GL_TEXTURE15);
         glBindTexture(GL_TEXTURE_CUBE_MAP, skyboxCubemapTexture);
+        glActiveTexture(GL_TEXTURE0);
 
         lightingShader.use();
         lightingShader.setVec3("dirLight.direction", glm::vec3(view*glm::vec4(-0.3f, -0.5f, -0.2f, 0.0f)));
@@ -516,7 +516,46 @@ int main()
             glDrawArrays(GL_TRIANGLES, 0, 36);
         }
         glBindVertexArray(0);
+
+        // Draw normals
         glActiveTexture(GL_TEXTURE0);
+        glBindTexture(GL_TEXTURE_2D, brickwall);
+        glActiveTexture(GL_TEXTURE1);
+        glBindTexture(GL_TEXTURE_2D, 0);
+        glActiveTexture(GL_TEXTURE2);
+        glBindTexture(GL_TEXTURE_2D, 0);
+        glActiveTexture(GL_TEXTURE3);
+        glBindTexture(GL_TEXTURE_2D, brickwallNormal);
+        glActiveTexture(GL_TEXTURE4);
+        glBindTexture(GL_TEXTURE_2D, 0);
+        glActiveTexture(GL_TEXTURE0);
+        glBindVertexArray(containerVAO);
+        model = glm::translate(glm::mat4(1.0f), glm::vec3(3.0f, 0.0f, 0.0f));
+        model = glm::rotate(model, glm::radians(180.0f), glm::vec3(0.0f, 1.0f, 0.0f));
+        lightingShader.setMat4("model", model);
+        glDrawArrays(GL_TRIANGLES, 0, 6);
+        glBindVertexArray(0);
+
+
+        // Draw displ
+        glActiveTexture(GL_TEXTURE0);
+        glBindTexture(GL_TEXTURE_2D, bricks);
+        glActiveTexture(GL_TEXTURE1);
+        glBindTexture(GL_TEXTURE_2D, 0);
+        glActiveTexture(GL_TEXTURE2);
+        glBindTexture(GL_TEXTURE_2D, 0);
+        glActiveTexture(GL_TEXTURE3);
+        glBindTexture(GL_TEXTURE_2D, bricksNormal);
+        glActiveTexture(GL_TEXTURE4);
+        glBindTexture(GL_TEXTURE_2D, bricksDisp);
+        glActiveTexture(GL_TEXTURE0);
+        glBindVertexArray(containerVAO);
+        model = glm::translate(glm::mat4(1.0f), glm::vec3(5.0f, 0.0f, 0.0f));
+        model = glm::rotate(model, glm::radians(180.0f), glm::vec3(0.0f, 1.0f, 0.0f));
+        lightingShader.setMat4("model", model);
+        glDrawArrays(GL_TRIANGLES, 0, 6);
+        glBindVertexArray(0);
+        /*********************************************/
 
         lightingShader.use();
         model = glm::translate(glm::mat4(1.0f), glm::vec3(50.0f, -4.0f, -50.0f));
@@ -538,6 +577,12 @@ int main()
         lightingShader.setInt("material.texture_ambient1", 2);
         glActiveTexture(GL_TEXTURE2);
         glBindTexture(GL_TEXTURE_2D, 0);
+        glActiveTexture(GL_TEXTURE3);
+        glBindTexture(GL_TEXTURE_2D, 0);
+        glActiveTexture(GL_TEXTURE4);
+        glBindTexture(GL_TEXTURE_2D, 0);
+        glActiveTexture(GL_TEXTURE0);
+
         for (unsigned int i = 0; i < rock.meshes.size(); i++)
         {
             glBindVertexArray(rock.meshes[i].VAO);
@@ -661,13 +706,14 @@ int main()
 #endif
         /************************************************/
 
+        gui.render();
+
         // Swap the screen buffers
         glfwSwapBuffers(window);
-        // Check if any events have been activiated (key pressed, mouse moved etc.) and call corresponding response functions
-        glfwPollEvents();
     }
 
     // Terminate GLFW, clearing any resources allocated by GLFW.
+    glfwDestroyWindow(window);
     glfwTerminate();
     return 0;
 }
