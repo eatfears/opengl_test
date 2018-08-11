@@ -69,9 +69,9 @@ struct SpotLight {
 
 uniform SpotLight spotLight;
 
-vec3 CalcDirLight(DirLight light, vec3 normal, vec3 viewDir);
-vec3 CalcPointLight(PointLight light, vec3 normal, vec3 viewDir);
-vec3 CalcSpotLight(SpotLight light, vec3 normal, vec3 viewDir);
+Phong CalcDirLight(DirLight light, vec3 normal, vec3 viewDir);
+Phong CalcPointLight(PointLight light, vec3 normal, vec3 viewDir);
+Phong CalcSpotLight(SpotLight light, vec3 normal, vec3 viewDir);
 
 float zNear = 0.1;
 float zFar  = 100.0;
@@ -102,38 +102,53 @@ void main()
     }
 
     vec3 viewDir = normalize(viewPos-FragPos);
-    vec3 result;
-    vec3 Ref = /*mat3(viewInv) **/ refract(-viewDir, norm, refractRatio);
-    vec3 R = /*mat3(viewInv) **/ reflect(-viewDir, norm);
+    vec3 result, R, Ref;
 
     switch (display_mode)
     {
     case 0:
+        Phong p;
+        vec3 diffuse = vec3(0.0);
+        vec3 specular = vec3(0.0);
 
-        result = CalcDirLight(dirLight, norm, viewDir);
+        p = CalcDirLight(dirLight, norm, viewDir);
+        diffuse += p.ambient + p.diffuse;
+        specular += p.specular;
 
         for (int i = 0; i < NR_POINT_LIGHTS; i++)
         {
-            result += CalcPointLight(pointLights[i], norm, viewDir);
+            p = CalcPointLight(pointLights[i], norm, viewDir);
+            diffuse += p.ambient + p.diffuse;
+            specular += p.specular;
         }
 
         if (flashlight)
         {
-            result += CalcSpotLight(spotLight, norm, viewDir);
+            p = CalcSpotLight(spotLight, norm, viewDir);
+            diffuse += p.ambient + p.diffuse;
+            specular += p.specular;
         }
 
+        result = diffuse * texture2D(material.texture_diffuse1, TexCoords).rgb
+                + specular * texture2D(material.texture_specular1, TexCoords).rgb;
+
         vec3 reflection_ratio = texture2D(material.texture_ambient1, TexCoords).rgb;
-        vec3 reflection = reflection_ratio * texture(reflectSample, R).rgb;
-        result += reflection;
-//        result = TBN[1];
+        if (length(reflection_ratio) > 0)
+        {
+            R = /*mat3(viewInv) **/ reflect(-viewDir, norm);
+            vec3 reflection = reflection_ratio * texture(reflectSample, R).rgb;
+            result += reflection;
+        }
         break;
     case 1:
         result = norm;
         break;
     case 2:
+        R = /*mat3(viewInv) **/ reflect(-viewDir, norm);
         result = texture(reflectSample, R).rgb;
         break;
     case 3:
+        Ref = /*mat3(viewInv) **/ refract(-viewDir, norm, refractRatio);
         result = texture(reflectSample, Ref).rgb;
         break;
     case 4:
@@ -165,7 +180,7 @@ void main()
 }
 
 
-Phong CalcPhong(Phong light, vec3 normal, vec3 viewDir, vec3 lightDir)
+Phong CalcPhong(Phong light, vec3 normal, vec3 viewDir, vec3 lightDir, float att)
 {
     // диффузное освещение
     float diff = max(dot(normal, lightDir), 0.0);
@@ -186,9 +201,9 @@ Phong CalcPhong(Phong light, vec3 normal, vec3 viewDir, vec3 lightDir)
     }
 
     Phong p;
-    p.ambient  = light.ambient  * 1.0f * vec3(texture2D(material.texture_diffuse1, TexCoords));
-    p.diffuse  = light.diffuse  * diff * vec3(texture2D(material.texture_diffuse1, TexCoords));
-    p.specular = light.specular * spec * vec3(texture2D(material.texture_specular1, TexCoords));
+    p.ambient  = light.ambient  * 1.0f * att;
+    p.diffuse  = light.diffuse  * diff * att;
+    p.specular = light.specular * spec * att;
     return p;
 }
 
@@ -204,25 +219,22 @@ float CalcAttenuation(Attenuation attenuation, float distance)
     return ret;
 }
 
-vec3 CalcDirLight(DirLight light, vec3 normal, vec3 viewDir)
+Phong CalcDirLight(DirLight light, vec3 normal, vec3 viewDir)
 {
     vec3 lightDir = normalize(-light.direction);
-    Phong p = CalcPhong(light.phong, normal, viewDir, lightDir);
-    return (p.ambient + p.diffuse + p.specular);
+    return CalcPhong(light.phong, normal, viewDir, lightDir, 1.0);
 }
 
-vec3 CalcPointLight(PointLight light, vec3 normal, vec3 viewDir)
+Phong CalcPointLight(PointLight light, vec3 normal, vec3 viewDir)
 {
     vec3 lightDir = normalize(light.position - FragPos);
-    Phong p = CalcPhong(light.phong, normal, viewDir, lightDir);
-
-    return (p.ambient + p.diffuse + p.specular) * CalcAttenuation(light.attenuation, length(light.position - FragPos));
+    return CalcPhong(light.phong, normal, viewDir, lightDir, CalcAttenuation(light.attenuation, length(light.position - FragPos)));
 }
 
-vec3 CalcSpotLight(SpotLight light, vec3 normal, vec3 viewDir)
+Phong CalcSpotLight(SpotLight light, vec3 normal, vec3 viewDir)
 {
     vec3 lightDir = normalize(light.position - FragPos);
-    Phong p = CalcPhong(light.phong, normal, viewDir, lightDir);
+    Phong p = CalcPhong(light.phong, normal, viewDir, lightDir, CalcAttenuation(light.attenuation, length(light.position - FragPos)));
 
     float theta = dot(lightDir, normalize(-light.direction));
     float epsilon   = light.cutOff - light.outerCutOff;
@@ -231,5 +243,5 @@ vec3 CalcSpotLight(SpotLight light, vec3 normal, vec3 viewDir)
     p.diffuse *= intensity;
     p.specular *= intensity;
 
-    return (p.ambient + p.diffuse + p.specular) * CalcAttenuation(light.attenuation, length(light.position - FragPos));
+    return p;
 }
