@@ -102,9 +102,8 @@ void main()
 
     vec3 viewDir = normalize(-FragPos);
     vec3 result;
-    vec3 I = normalize(FragPos);
-    vec3 Ref = mat3(viewInv) * refract(I, norm, refractRatio);
-    vec3 R = mat3(viewInv) * reflect(I, norm);
+    vec3 Ref = mat3(viewInv) * refract(-viewDir, norm, refractRatio);
+    vec3 R = mat3(viewInv) * reflect(-viewDir, norm);
 
     switch (display_mode)
     {
@@ -126,6 +125,7 @@ void main()
         vec3 reflection_ratio = texture2D(material.texture_ambient1, TexCoords).rgb;
         vec3 reflection = reflection_ratio * texture(reflectSample, R).rgb;
         result += reflection;
+//        result = TBN[1];
         break;
     case 1:
         result = norm;

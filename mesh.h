@@ -223,12 +223,11 @@ private:
         {
             for ( int i = 0; i < vertices.size(); i+=3)
             {
-
-                // Shortcuts for vertices
                 Vertex & vv0 = vertices[i+0];
                 Vertex & vv1 = vertices[i+1];
                 Vertex & vv2 = vertices[i+2];
 
+                // Shortcuts for vertices
                 glm::vec3 & v0 = vv0.Position;
                 glm::vec3 & v1 = vv1.Position;
                 glm::vec3 & v2 = vv2.Position;

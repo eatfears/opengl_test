@@ -156,9 +156,50 @@ int main()
 
     /*********************************************************************************/
 
+    {
+        for ( int i = 0; i < 36; i+=3)
+        {
+            // Shortcuts for vertices
+            glm::vec3 v0(vertices[8*i], vertices[8*i + 1], vertices[8*i + 2]);
+            glm::vec3 v1(vertices[8*i+8], vertices[8*i+8 + 1], vertices[8*i+8 + 2]);
+            glm::vec3 v2(vertices[8*i+16], vertices[8*i+16 + 1], vertices[8*i+16 + 2]);
+
+            // Shortcuts for UVs
+            glm::vec2 uv0(vertices[8*i + 6], vertices[8*i + 7]);
+            glm::vec2 uv1(vertices[8*i+8 + 6], vertices[8*i+8 + 7]);
+            glm::vec2 uv2(vertices[8*i+16 + 6], vertices[8*i+16 + 7]);
+
+            // Edges of the triangle : position delta
+            glm::vec3 deltaPos1 = v1-v0;
+            glm::vec3 deltaPos2 = v2-v0;
+
+            // UV delta
+            glm::vec2 deltaUV1 = uv1-uv0;
+            glm::vec2 deltaUV2 = uv2-uv0;
+
+            float r = 1.0f / (deltaUV1.x * deltaUV2.y - deltaUV1.y * deltaUV2.x);
+            glm::vec3 normal = glm::normalize(glm::cross(deltaPos1, deltaPos2));
+            glm::vec3 ltangent = (deltaPos1 * deltaUV2.y   - deltaPos2 * deltaUV1.y)*r;
+            glm::vec3 lbitangent = (deltaPos2 * deltaUV1.x   - deltaPos1 * deltaUV2.x)*r;
+
+//            vv0.Normal = normal;
+//            vv1.Normal = normal;
+//            vv2.Normal = normal;
+
+            tangent[3*i] = ltangent.x; tangent[3*i + 1] = ltangent.y; tangent[3*i + 2] = ltangent.z;
+            tangent[3*i+3] = ltangent.x; tangent[3*i+3 + 1] = ltangent.y; tangent[3*i+3 + 2] = ltangent.z;
+            tangent[3*i+6] = ltangent.x; tangent[3*i+6 + 1] = ltangent.y; tangent[3*i+6 + 2] = ltangent.z;
+
+            bitangent[3*i] = lbitangent.x; bitangent[3*i + 1] = lbitangent.y; bitangent[3*i + 2] = lbitangent.z;
+            bitangent[3*i+3] = lbitangent.x; bitangent[3*i+3 + 1] = lbitangent.y; bitangent[3*i+3 + 2] = lbitangent.z;
+            bitangent[3*i+6] = lbitangent.x; bitangent[3*i+6 + 1] = lbitangent.y; bitangent[3*i+6 + 2] = lbitangent.z;
+        }
+    }
     // First, set the container's VAO (and VBO)
-    GLuint VBO, containerVAO, lightVAO, quadVBO, quadVAO, skyboxVBO, skyboxVAO;
+    GLuint VBO, tangentVBO, bitangentVBO, containerVAO, lightVAO, quadVBO, quadVAO, skyboxVBO, skyboxVAO;
     glGenBuffers(1, &VBO);
+    glGenBuffers(1, &tangentVBO);
+    glGenBuffers(1, &bitangentVBO);
     glGenBuffers(1, &quadVBO);
     glGenBuffers(1, &skyboxVBO);
 
@@ -170,8 +211,16 @@ int main()
     glEnableVertexAttribArray(0);
     glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 8 * sizeof(GLfloat), (GLvoid*)(3*sizeof(GLfloat)));
     glEnableVertexAttribArray(1);
-    glVertexAttribPointer(2, 3, GL_FLOAT, GL_FALSE, 8 * sizeof(GLfloat), (GLvoid*)(6*sizeof(GLfloat)));
+    glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, 8 * sizeof(GLfloat), (GLvoid*)(6*sizeof(GLfloat)));
     glEnableVertexAttribArray(2);
+    glBindBuffer(GL_ARRAY_BUFFER, tangentVBO);
+    glBufferData(GL_ARRAY_BUFFER, sizeof(tangent), tangent, GL_STATIC_DRAW);
+    glVertexAttribPointer(3, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(GLfloat), (GLvoid*)0);
+    glEnableVertexAttribArray(3);
+    glBindBuffer(GL_ARRAY_BUFFER, bitangentVBO);
+    glBufferData(GL_ARRAY_BUFFER, sizeof(bitangent), bitangent, GL_STATIC_DRAW);
+    glVertexAttribPointer(4, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(GLfloat), (GLvoid*)0);
+    glEnableVertexAttribArray(4);
     glBindVertexArray(0);
 
     glGenVertexArrays(1, &lightVAO);
@@ -547,7 +596,7 @@ int main()
         model = glm::translate(glm::mat4(1.0f), glm::vec3(3.0f, 0.0f, 0.0f));
         model = glm::rotate(model, glm::radians(180.0f), glm::vec3(0.0f, 1.0f, 0.0f));
         lightingShader.setMat4("model", model);
-        glDrawArrays(GL_TRIANGLES, 0, 6);
+        glDrawArrays(GL_TRIANGLES, 0, 36);
         glBindVertexArray(0);
 
 
@@ -570,6 +619,10 @@ int main()
         glActiveTexture(GL_TEXTURE0);
         glBindVertexArray(containerVAO);
         model = glm::translate(glm::mat4(1.0f), glm::vec3(5.0f, 0.0f, 0.0f));
+        model = glm::rotate(model, glm::radians(180.0f), glm::vec3(0.0f, 1.0f, 0.0f));
+        lightingShader.setMat4("model", model);
+        glDrawArrays(GL_TRIANGLES, 0, 36);
+        model = glm::translate(glm::mat4(1.0f), glm::vec3(7.0f, 0.0f, 0.0f));
         model = glm::rotate(model, glm::radians(180.0f), glm::vec3(0.0f, 1.0f, 0.0f));
         lightingShader.setMat4("model", model);
         glDrawArrays(GL_TRIANGLES, 0, 6);

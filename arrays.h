@@ -97,6 +97,9 @@ GLfloat vertices[] = {
     -0.5f,  0.5f,  0.5f,  0.0f,  1.0f,  0.0f,  0.0f, 0.0f, // bottom-left
 };
 
+GLfloat tangent[36*3] = {};
+GLfloat bitangent[36*3] = {};
+
 GLfloat quad_vertices[] = {
     -1.0f,  1.0f,  0.0f, 1.0f,
     -1.0f, -1.0f,  0.0f, 0.0f,
