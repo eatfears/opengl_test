@@ -48,6 +48,7 @@ public:
         catch(std::ifstream::failure &e)
         {
             std::cout << "ERROR::SHADER::FILE_NOT_SUCCESFULLY_READ: " << e.what() << std::endl;
+            exit(1);
         }
         const GLchar* v_shader_code = vertex_code.c_str();
         const GLchar* f_shader_code = fragment_code.c_str();
@@ -68,6 +69,7 @@ public:
         {
             glGetShaderInfoLog(vertex, 512, NULL, infoLog);
             std::cout << "ERROR::SHADER::VERTEX::COMPILATION_FAILED\n" << infoLog << std::endl;
+            exit(1);
         };
 
         // Фрагментный шейдер
@@ -80,6 +82,7 @@ public:
         {
             glGetShaderInfoLog(vertex, 512, NULL, infoLog);
             std::cout << "ERROR::SHADER::FRAGMENT::COMPILATION_FAILED\n" << infoLog << std::endl;
+            exit(1);
         };
 
 
@@ -96,6 +99,7 @@ public:
         {
             glGetProgramInfoLog(this->m_Program, 512, NULL, infoLog);
             std::cout << "ERROR::SHADER::PROGRAM::LINKING_FAILED\n" << infoLog << std::endl;
+            exit(1);
         }
 
         // Удаляем шейдеры, поскольку они уже в программу и нам больше не нужны.

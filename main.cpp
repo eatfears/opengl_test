@@ -44,9 +44,8 @@ bool    keys[1024];
 GLfloat deltaTime = 0.0f;	// Time between current frame and last frame
 GLfloat lastFrame = 0.0f;  	// Time of last frame
 
-bool flashlight = false;
-bool blinn = true;
-bool flashlightKeyPressed = false, blinnKeyPressed = false;
+Gui gui;
+bool flashlight_key_pressed = false, blinn_key_pressed = false, normal_key_pressed = false;
 
 // The MAIN function, from here we start the application and run the game loop
 int main()
@@ -72,7 +71,7 @@ int main()
     glfwSetScrollCallback(window, scroll_callback);
 
     // GLFW Options
-    glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
+//    glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
 
     // Set this to true so GLEW knows to use a modern approach to retrieving function pointers and extensions
     glewExperimental = GL_TRUE;
@@ -86,7 +85,7 @@ int main()
     glEnable(GL_DEPTH_TEST);
     glEnable(GL_MULTISAMPLE);
 
-    Gui gui(window, "#version 330");
+    gui.init(window, "#version 330");
 
 //#define REVERSE_Z
 #ifdef REVERSE_Z
@@ -135,18 +134,18 @@ int main()
 
     GLuint boxDiffuseTexture, boxSpecularTexture, vegetationTexture, windowsTexture, skyboxCubemapTexture;
     boxDiffuseTexture = TextureFromFile("resources/textures/container2.png", true);
-    boxSpecularTexture = TextureFromFile("resources/textures/container2_specular.png", true);
+    boxSpecularTexture = TextureFromFile("resources/textures/container2_specular.png", false);
     vegetationTexture = TextureFromFile("resources/textures/grass.png", true, GL_CLAMP_TO_EDGE);
     windowsTexture = TextureFromFile("resources/textures/window.png", true, GL_CLAMP_TO_EDGE);
 
     GLuint bricks, bricksDisp, bricksNormal;
     bricks = TextureFromFile("resources/textures/bricks2.jpg", true);
-    bricksDisp = TextureFromFile("resources/textures/bricks2_disp.jpg", true);
-    bricksNormal = TextureFromFile("resources/textures/bricks2_normal.jpg", true);
+    bricksDisp = TextureFromFile("resources/textures/bricks2_disp.jpg", false);
+    bricksNormal = TextureFromFile("resources/textures/bricks2_normal.jpg", false);
 
     GLuint brickwall, brickwallNormal;
     brickwall = TextureFromFile("resources/textures/brickwall.jpg", true);
-    brickwallNormal = TextureFromFile("resources/textures/brickwall_normal.jpg", true);
+    brickwallNormal = TextureFromFile("resources/textures/brickwall_normal.jpg", false);
 
     skyboxCubemapTexture = loadCubemap(cubemapFaces);
 
@@ -214,7 +213,7 @@ int main()
     }
 
     lightingShader.setVec3("spotLight.phong.ambient", 0.0f, 0.0f, 0.0f);
-    lightingShader.setVec3("spotLight.phong.diffuse", 0.9f, 0.8f, 0.9f);
+    lightingShader.setVec3("spotLight.phong.diffuse", 1.9f, 1.8f, 1.9f);
     lightingShader.setVec3("spotLight.phong.specular", 1.0f, 1.0f, 1.0f);
     lightingShader.setFloat("spotLight.attenuation.constant",  1.0f);
     lightingShader.setFloat("spotLight.attenuation.linear",    0.045f);
@@ -236,6 +235,7 @@ int main()
     screenShader.setInt("screenTexture", 0);
 
     Model nanosuit("resources/objects/nanosuit/nanosuit.obj");
+    Model cyborg("resources/objects/cyborg/cyborg.obj");
     Model rock("resources/objects/rock/rock.obj");
     Model planet("resources/objects/planet/planet.obj");
 
@@ -286,19 +286,19 @@ int main()
         glBindVertexArray(VAO);
         // настройка атрибутов
         GLsizei vec4Size = sizeof(glm::vec4);
-        glEnableVertexAttribArray(3);
-        glVertexAttribPointer(3, 4, GL_FLOAT, GL_FALSE, 4 * vec4Size, (void*)0);
-        glEnableVertexAttribArray(4);
-        glVertexAttribPointer(4, 4, GL_FLOAT, GL_FALSE, 4 * vec4Size, (void*)(vec4Size));
         glEnableVertexAttribArray(5);
-        glVertexAttribPointer(5, 4, GL_FLOAT, GL_FALSE, 4 * vec4Size, (void*)(2 * vec4Size));
+        glVertexAttribPointer(5, 4, GL_FLOAT, GL_FALSE, 4 * vec4Size, (void*)0);
         glEnableVertexAttribArray(6);
-        glVertexAttribPointer(6, 4, GL_FLOAT, GL_FALSE, 4 * vec4Size, (void*)(3 * vec4Size));
+        glVertexAttribPointer(6, 4, GL_FLOAT, GL_FALSE, 4 * vec4Size, (void*)(vec4Size));
+        glEnableVertexAttribArray(7);
+        glVertexAttribPointer(7, 4, GL_FLOAT, GL_FALSE, 4 * vec4Size, (void*)(2 * vec4Size));
+        glEnableVertexAttribArray(8);
+        glVertexAttribPointer(8, 4, GL_FLOAT, GL_FALSE, 4 * vec4Size, (void*)(3 * vec4Size));
 
-        glVertexAttribDivisor(3, 1);
-        glVertexAttribDivisor(4, 1);
         glVertexAttribDivisor(5, 1);
         glVertexAttribDivisor(6, 1);
+        glVertexAttribDivisor(7, 1);
+        glVertexAttribDivisor(8, 1);
 
         glBindVertexArray(0);
     }
@@ -498,8 +498,9 @@ int main()
         lightingShader.setVec3("spotLight.position",  glm::vec3(view*glm::vec4(camera.Position, 1.0f)) + glm::vec3(0.2, -0.1, -0.1));
         lightingShader.setVec3("spotLight.direction", glm::vec3(view*glm::vec4(camera.Front, 0.0f)));
 
-        lightingShader.setBool("flashlight",  flashlight);
-        lightingShader.setBool("blinn",  blinn);
+        lightingShader.setBool("flashlight", gui.flashlight);
+        lightingShader.setBool("blinn",  gui.blinn);
+        lightingShader.setBool("normal_mapping",  gui.normal);
 
         lightingShader.setMat4("viewInv", glm::inverse(view));
 
@@ -520,14 +521,19 @@ int main()
         // Draw normals
         glActiveTexture(GL_TEXTURE0);
         glBindTexture(GL_TEXTURE_2D, brickwall);
+        lightingShader.setInt("material.texture_diffuse1", 0);
         glActiveTexture(GL_TEXTURE1);
         glBindTexture(GL_TEXTURE_2D, 0);
+        lightingShader.setInt("material.texture_specular1", 1);
         glActiveTexture(GL_TEXTURE2);
         glBindTexture(GL_TEXTURE_2D, 0);
+        lightingShader.setInt("material.texture_ambient1", 2);
         glActiveTexture(GL_TEXTURE3);
         glBindTexture(GL_TEXTURE_2D, brickwallNormal);
+        lightingShader.setInt("material.texture_bump1", 3);
         glActiveTexture(GL_TEXTURE4);
         glBindTexture(GL_TEXTURE_2D, 0);
+        lightingShader.setInt("material.texture_displ1", 4);
         glActiveTexture(GL_TEXTURE0);
         glBindVertexArray(containerVAO);
         model = glm::translate(glm::mat4(1.0f), glm::vec3(3.0f, 0.0f, 0.0f));
@@ -540,14 +546,19 @@ int main()
         // Draw displ
         glActiveTexture(GL_TEXTURE0);
         glBindTexture(GL_TEXTURE_2D, bricks);
+        lightingShader.setInt("material.texture_diffuse1", 0);
         glActiveTexture(GL_TEXTURE1);
         glBindTexture(GL_TEXTURE_2D, 0);
+        lightingShader.setInt("material.texture_specular1", 1);
         glActiveTexture(GL_TEXTURE2);
         glBindTexture(GL_TEXTURE_2D, 0);
+        lightingShader.setInt("material.texture_ambient1", 2);
         glActiveTexture(GL_TEXTURE3);
         glBindTexture(GL_TEXTURE_2D, bricksNormal);
+        lightingShader.setInt("material.texture_bump1", 3);
         glActiveTexture(GL_TEXTURE4);
         glBindTexture(GL_TEXTURE_2D, bricksDisp);
+        lightingShader.setInt("material.texture_displ1", 4);
         glActiveTexture(GL_TEXTURE0);
         glBindVertexArray(containerVAO);
         model = glm::translate(glm::mat4(1.0f), glm::vec3(5.0f, 0.0f, 0.0f));
@@ -556,6 +567,17 @@ int main()
         glDrawArrays(GL_TRIANGLES, 0, 6);
         glBindVertexArray(0);
         /*********************************************/
+
+        glActiveTexture(GL_TEXTURE0);
+        glBindTexture(GL_TEXTURE_2D, 0);
+        glActiveTexture(GL_TEXTURE1);
+        glBindTexture(GL_TEXTURE_2D, 0);
+        glActiveTexture(GL_TEXTURE2);
+        glBindTexture(GL_TEXTURE_2D, 0);
+        glActiveTexture(GL_TEXTURE3);
+        glBindTexture(GL_TEXTURE_2D, 0);
+        glActiveTexture(GL_TEXTURE4);
+        glBindTexture(GL_TEXTURE_2D, 0);
 
         lightingShader.use();
         model = glm::translate(glm::mat4(1.0f), glm::vec3(50.0f, -4.0f, -50.0f));
@@ -581,7 +603,6 @@ int main()
         glBindTexture(GL_TEXTURE_2D, 0);
         glActiveTexture(GL_TEXTURE4);
         glBindTexture(GL_TEXTURE_2D, 0);
-        glActiveTexture(GL_TEXTURE0);
 
         for (unsigned int i = 0; i < rock.meshes.size(); i++)
         {
@@ -610,6 +631,10 @@ int main()
 //        glStencilFunc(GL_NOTEQUAL, 1, 0xFF);
 //        glStencilMask(0x00); // отключить запись в трафаретный буфер
 
+        model = glm::translate(glm::mat4(1.0f), glm::vec3(-5.0f, 0.5f, 0.0f));
+        model = glm::scale(model, glm::vec3(0.8f));
+        lightingShader.setMat4("model", model);
+        cyborg.Draw(lightingShader);
 
         glEnable(GL_CULL_FACE);
         // Also draw the lamp object, again binding the appropriate shader
@@ -737,26 +762,37 @@ void processInput(GLFWwindow *window)
     if (glfwGetKey(window, GLFW_KEY_F) == GLFW_PRESS)
         camera.processKeyboard(DOWN, deltaTime);
 
-    if (glfwGetKey(window, GLFW_KEY_Q) == GLFW_PRESS && !flashlightKeyPressed)
+    if (glfwGetKey(window, GLFW_KEY_Q) == GLFW_PRESS && !flashlight_key_pressed)
     {
-        flashlight = !flashlight;
-        std::cout << "Flashlight " << flashlight << std::endl;
-        flashlightKeyPressed = true;
+        gui.flashlight = !gui.flashlight;
+        std::cout << "Flashlight " << gui.flashlight << std::endl;
+        flashlight_key_pressed = true;
     }
     if (glfwGetKey(window, GLFW_KEY_Q) == GLFW_RELEASE)
     {
-        flashlightKeyPressed = false;
+        flashlight_key_pressed = false;
     }
 
-    if (glfwGetKey(window, GLFW_KEY_B) == GLFW_PRESS && !blinnKeyPressed)
+    if (glfwGetKey(window, GLFW_KEY_B) == GLFW_PRESS && !blinn_key_pressed)
     {
-        blinn = !blinn;
-        std::cout << "Blinn " << blinn << std::endl;
-        blinnKeyPressed = true;
+        gui.blinn = !gui.blinn;
+        std::cout << "Blinn " << gui.blinn << std::endl;
+        blinn_key_pressed = true;
     }
     if (glfwGetKey(window, GLFW_KEY_B) == GLFW_RELEASE)
     {
-        blinnKeyPressed = false;
+        blinn_key_pressed = false;
+    }
+
+    if (glfwGetKey(window, GLFW_KEY_N) == GLFW_PRESS && !normal_key_pressed)
+    {
+        gui.normal = !gui.normal;
+        std::cout << "Normal " << gui.normal << std::endl;
+        normal_key_pressed = true;
+    }
+    if (glfwGetKey(window, GLFW_KEY_N) == GLFW_RELEASE)
+    {
+        normal_key_pressed = false;
     }
 }
 // Is called whenever a key is pressed/released via GLFW

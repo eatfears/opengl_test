@@ -3,7 +3,11 @@
 #include "../imgui/imgui.h"
 
 
-Gui::Gui(GLFWwindow *window, const char *glsl_version)
+Gui::Gui()
+{
+}
+
+void Gui::init(GLFWwindow *window, const char *glsl_version)
 {
     ImGui::CreateContext();
     ImGuiIO &io = ImGui::GetIO(); (void) io;
@@ -54,6 +58,11 @@ void Gui::render()
         ImGui::Text("counter = %d", counter);
         */
         ImGui::Text("Application average %.3f ms/frame (%.1f FPS)", 1000.0f / ImGui::GetIO().Framerate, ImGui::GetIO().Framerate);
+
+        ImGui::Checkbox("Flashlight", &flashlight);
+        ImGui::Checkbox("Blinn", &blinn);
+        ImGui::Checkbox("Normal", &normal);
+
         ImGui::End();
     }
     if (show_another_window)

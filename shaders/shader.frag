@@ -2,11 +2,14 @@
 out vec4 color;
 
 in vec3 FragPos;
-in vec3 Normal;
 in vec2 TexCoords;
+in mat3 TBN;
 
 uniform mat4 viewInv;
+
+uniform bool flashlight;
 uniform bool blinn;
+uniform bool normal_mapping;
 
 struct Material
 {
@@ -62,7 +65,6 @@ struct SpotLight {
 };
 
 uniform SpotLight spotLight;
-uniform bool flashlight;
 
 vec3 CalcDirLight(DirLight light, vec3 normal, vec3 viewDir);
 vec3 CalcPointLight(PointLight light, vec3 normal, vec3 viewDir);
@@ -80,7 +82,22 @@ float LinearizeDepth(float depth)
 
 void main()
 {
-    vec3 norm = normalize(Normal);
+    vec3 norm;
+    if (normal_mapping)
+    {
+        norm = (texture2D(material.texture_bump1, TexCoords).rgb);
+        if (length(norm) == 0.0)
+        {
+            norm = vec3(0.5, 0.5, 1.0);   //fake
+        }
+        norm = normalize(norm * 2.0 - 1.0);
+        norm = normalize(TBN * norm);
+    }
+    else
+    {
+        norm = TBN[2];
+    }
+
     vec3 viewDir = normalize(-FragPos);
 
     vec3 result;
@@ -98,10 +115,10 @@ void main()
 
 
     vec3 I = normalize(FragPos);
-    vec3 R = mat3(viewInv) * reflect(I, normalize(Normal));
+    vec3 R = mat3(viewInv) * reflect(I, norm);
 
     float ratio = 1.00 / 1.52;
-    vec3 Ref = mat3(viewInv) * refract(I, normalize(Normal), ratio);
+    vec3 Ref = mat3(viewInv) * refract(I, norm, ratio);
 
 
     vec3 reflection_ratio = texture2D(material.texture_ambient1, TexCoords).rgb;
@@ -109,7 +126,8 @@ void main()
     result += reflection;
 //    result = texture(reflectSample, R).rgb;
 //    result = vec3(LinearizeDepth(gl_FragCoord.z) / zFar);
-//    result = texture2D(material.texture_diffuse1, TexCoords).rgb;
+//    result = texture2D(material.texture_bump1, TexCoords).rgb;
+//    result = norm;
     color = vec4(result, 1.0);
 //    color = vec4(1.0);
 }

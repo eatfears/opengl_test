@@ -2,7 +2,9 @@
 layout (location = 0) in vec3 aPosition;
 layout (location = 1) in vec3 aNormal;
 layout (location = 2) in vec2 aTexCoords;
-layout (location = 3) in mat4 aInstanceMatrix;
+layout (location = 3) in vec3 aTangent;
+layout (location = 4) in vec3 aBitangent;
+layout (location = 5) in mat4 aInstanceMatrix;
 
 layout (std140) uniform Matrices
 {
@@ -17,8 +19,8 @@ uniform float time;
 uniform mat4 planet_model;
 
 out vec3 FragPos;
-out vec3 Normal;
 out vec2 TexCoords;
+out mat3 TBN;
 
 mat4 rotationMatrix(vec3 axis, float angle)
 {
@@ -53,8 +55,15 @@ void main()
     }
 
     FragPos = vec3(view * model_loc * vec4(aPosition, 1.0f));
-    Normal = mat3(transpose(inverse(view * model_loc))) * aNormal;
     TexCoords = aTexCoords;
+
+
+    vec3 T = normalize(mat3(transpose(inverse(view * model_loc))) * aTangent);
+    vec3 B = normalize(mat3(transpose(inverse(view * model_loc))) * aBitangent);
+    vec3 N = normalize(mat3(transpose(inverse(view * model_loc))) * aNormal);
+//    vec3 T = vec3(0.0, 1.0, 0.0);
+//    vec3 B = cross(N, T);
+    TBN = mat3(T, B, N);
 
     gl_Position = projection * view * model_loc * vec4(aPosition, 1.0f);
 }

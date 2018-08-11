@@ -9,12 +9,20 @@
 class Gui
 {
 public:
-    Gui(GLFWwindow *window, const char *glsl_version);
+    Gui();
     ~Gui();
+
+    void init(GLFWwindow *window, const char *glsl_version);
     void render();
 
     bool show_another_window = false;
     bool show_demo_window = false;
+
+    bool flashlight = false;
+    bool blinn = true;
+    bool normal = true;
+
+
     float clear_color[3] = {};
 };
 

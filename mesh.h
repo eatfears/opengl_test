@@ -17,6 +17,8 @@ struct Vertex {
     glm::vec3 Position;
     glm::vec3 Normal;
     glm::vec2 TexCoords;
+    glm::vec3 Tangent;
+    glm::vec3 Bitangent;
 };
 
 struct Texture {
@@ -45,6 +47,12 @@ public:
         unsigned int bumpNr = 1;
         unsigned int displNr = 1;
 
+        shader.setInt("material.texture_diffuse1", 32);
+        shader.setInt("material.texture_specular1", 32);
+        shader.setInt("material.texture_ambient1", 32);
+        shader.setInt("material.texture_bump1", 32);
+        shader.setInt("material.texture_displ1", 32);
+
         for(unsigned int i = 0; i < textures.size(); i++)
         {
             glActiveTexture(GL_TEXTURE0 + i); // активируем текстурный блок, до привязки
@@ -64,7 +72,7 @@ public:
                 ss << displNr++;
             number = ss.str();
 
-            shader.setFloat(("material." + name + number).c_str(), i);
+            shader.setInt(("material." + name + number).c_str(), i);
             glBindTexture(GL_TEXTURE_2D, textures[i].id);
         }
         glActiveTexture(GL_TEXTURE0);
@@ -103,6 +111,11 @@ private:
         // vertex texture coords
         glEnableVertexAttribArray(2);
         glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void*)offsetof(Vertex, TexCoords));
+        // calculated tangent space
+        glEnableVertexAttribArray(3);
+        glVertexAttribPointer(3, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void*)offsetof(Vertex, Tangent));
+        glEnableVertexAttribArray(4);
+        glVertexAttribPointer(4, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void*)offsetof(Vertex, Bitangent));
 
         glBindVertexArray(0);
     }
@@ -131,12 +144,12 @@ private:
 
     void loadModel(const std::string &path)
     {
-        Assimp::Importer import;
-        const aiScene *scene = import.ReadFile(path, aiProcess_Triangulate | aiProcess_FlipUVs);
+        Assimp::Importer importer;
+        const aiScene *scene = importer.ReadFile(path, aiProcess_Triangulate | aiProcess_FlipUVs | aiProcess_FixInfacingNormals | aiProcess_GenUVCoords |  aiProcess_GenNormals | aiProcess_CalcTangentSpace);
 
         if(!scene || scene->mFlags & AI_SCENE_FLAGS_INCOMPLETE || !scene->mRootNode)
         {
-            std::cerr << "ERROR::ASSIMP::" << import.GetErrorString() << std::endl;
+            std::cerr << "ERROR::ASSIMP::" << importer.GetErrorString() << std::endl;
             return;
         }
         directory = path.substr(0, path.find_last_of('/'));
@@ -177,6 +190,16 @@ private:
             vector.y = mesh->mNormals[i].y;
             vector.z = mesh->mNormals[i].z;
             vertex.Normal = vector;
+
+            vector.x = mesh->mTangents[i].x;
+            vector.y = mesh->mTangents[i].y;
+            vector.z = mesh->mTangents[i].z;
+            vertex.Tangent = vector;
+
+            vector.x = mesh->mBitangents[i].x;
+            vector.y = mesh->mBitangents[i].y;
+            vector.z = mesh->mBitangents[i].z;
+            vertex.Bitangent = vector;
 
             if(mesh->mTextureCoords[0]) // сетка обладает набором текстурных координат?
             {
@@ -219,7 +242,7 @@ private:
             textures.insert(textures.end(), ambientMaps.begin(), ambientMaps.end());
 
             std::vector<Texture> bumpMaps = loadMaterialTextures(material,
-                                                                 aiTextureType_NORMALS, "texture_bump");
+                                                                 aiTextureType_HEIGHT, "texture_bump");
             textures.insert(textures.end(), bumpMaps.begin(), bumpMaps.end());
 
             std::vector<Texture> displMaps = loadMaterialTextures(material,
