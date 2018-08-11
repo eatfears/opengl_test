@@ -54,13 +54,15 @@ void main()
         model_loc = planet_model * model_loc;
     }
 
-    FragPos = vec3(view * model_loc * vec4(aPosition, 1.0f));
+    mat4 modelView = /*view **/ model_loc;
+    mat3 modelViewInverseTranspose = mat3(transpose(inverse(modelView)));
+    FragPos = vec3(modelView * vec4(aPosition, 1.0f));
     TexCoords = aTexCoords;
 
 
-    vec3 T = normalize(mat3(transpose(inverse(view * model_loc))) * aTangent);
-    vec3 B = normalize(mat3(transpose(inverse(view * model_loc))) * aBitangent);
-    vec3 N = normalize(mat3(transpose(inverse(view * model_loc))) * aNormal);
+    vec3 T = normalize(modelViewInverseTranspose * aTangent);
+    vec3 B = normalize(modelViewInverseTranspose * aBitangent);
+    vec3 N = normalize(modelViewInverseTranspose * aNormal);
 //    if (dot(cross(N, T), B) < 0.0)
 //    {
 //        TexCoords = vec2(0.0, 0.0);

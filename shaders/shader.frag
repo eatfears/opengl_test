@@ -5,6 +5,7 @@ in vec3 FragPos;
 in vec2 TexCoords;
 in mat3 TBN;
 
+uniform vec3 viewPos;
 uniform mat4 viewInv;
 
 uniform bool flashlight;
@@ -100,10 +101,10 @@ void main()
         norm = TBN[2];
     }
 
-    vec3 viewDir = normalize(-FragPos);
+    vec3 viewDir = normalize(viewPos-FragPos);
     vec3 result;
-    vec3 Ref = mat3(viewInv) * refract(-viewDir, norm, refractRatio);
-    vec3 R = mat3(viewInv) * reflect(-viewDir, norm);
+    vec3 Ref = /*mat3(viewInv) **/ refract(-viewDir, norm, refractRatio);
+    vec3 R = /*mat3(viewInv) **/ reflect(-viewDir, norm);
 
     switch (display_mode)
     {
@@ -120,7 +121,6 @@ void main()
         {
             result += CalcSpotLight(spotLight, norm, viewDir);
         }
-
 
         vec3 reflection_ratio = texture2D(material.texture_ambient1, TexCoords).rgb;
         vec3 reflection = reflection_ratio * texture(reflectSample, R).rgb;
@@ -155,7 +155,6 @@ void main()
         result = vec3(1.0);
         break;
     }
-
 
 //    result = texture(reflectSample, R).rgb;
 //    result = vec3(LinearizeDepth(gl_FragCoord.z) / zFar);

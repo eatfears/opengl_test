@@ -543,24 +543,24 @@ int main()
         glActiveTexture(GL_TEXTURE0);
 
         lightingShader.use();
-        lightingShader.setVec3("dirLight.direction", glm::vec3(view*glm::vec4(-0.3f, -0.5f, -0.2f, 0.0f)));
+        lightingShader.setVec3("dirLight.direction", glm::vec3(glm::vec4(-0.3f, -0.5f, -0.2f, 0.0f)));
 
         for (int i = 0; i < 4; ++i)
         {
-            lightingShader.setVec3("pointLights[" + std::to_string(i) + "].position", glm::vec3(view*glm::vec4(pointLightPositions[i], 1.0f)));
+            lightingShader.setVec3("pointLights[" + std::to_string(i) + "].position", glm::vec3(/*view**/glm::vec4(pointLightPositions[i], 1.0f)));
         }
 
-        lightingShader.setVec3("spotLight.position",  glm::vec3(view*glm::vec4(camera.Position, 1.0f)) + glm::vec3(0.2, -0.1, -0.1));
-        lightingShader.setVec3("spotLight.direction", glm::vec3(view*glm::vec4(camera.Front, 0.0f)));
+        lightingShader.setVec3("spotLight.position",  glm::vec3(/*view**/glm::vec4(camera.Position, 1.0f)) + glm::vec3(0.2, -0.1, -0.1));
+        lightingShader.setVec3("spotLight.direction", glm::vec3(/*view**/glm::vec4(camera.Front, 0.0f)));
 
         lightingShader.setBool("flashlight", gui.flashlight);
         lightingShader.setBool("blinn",  gui.blinn);
         lightingShader.setBool("normal_mapping",  gui.normal);
-        lightingShader.setBool("rotate",  gui.rotate);
         lightingShader.setInt("display_mode",  gui.m_DisplayMode);
         lightingShader.setFloat("refractRatio",  gui.refractRatio);
 
-        lightingShader.setMat4("viewInv", glm::inverse(view));
+        lightingShader.setVec3("viewPos", camera.Position);
+        //lightingShader.setMat4("viewInv", glm::inverse(view));
 
         // Draw the container (using container's vertex attributes)
         glBindVertexArray(containerVAO);
