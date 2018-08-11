@@ -3,6 +3,7 @@
 
 #include <GL/glew.h>
 #include <GLFW/glfw3.h>
+#include <set>
 #include <vector>
 #include <glm/glm.hpp>
 
@@ -127,8 +128,9 @@ unsigned int TextureFromFile(const std::string &path, bool gamma = false, GLuint
 class Model
 {
 public:
-    Model(const std::string &path)
+    Model(const std::string &path, std::set<std::string> set = {"texture_diffuse"})
     {
+        m_SrgbNames = set;
         loadModel(path);
     }
     void Draw(const Shader &shader)
@@ -141,11 +143,12 @@ public:
     std::vector<Texture> textures_loaded;
 private:
     std::string directory;
+    std::set<std::string> m_SrgbNames;
 
     void loadModel(const std::string &path)
     {
         Assimp::Importer importer;
-        const aiScene *scene = importer.ReadFile(path, aiProcess_Triangulate | aiProcess_FlipUVs | aiProcess_FixInfacingNormals | aiProcess_GenUVCoords |  aiProcess_GenNormals | aiProcess_CalcTangentSpace);
+        const aiScene *scene = importer.ReadFile(path, aiProcess_Triangulate | aiProcess_FlipUVs | aiProcess_FixInfacingNormals | aiProcess_GenUVCoords |  aiProcess_GenSmoothNormals | aiProcess_CalcTangentSpace);
 
         if(!scene || scene->mFlags & AI_SCENE_FLAGS_INCOMPLETE || !scene->mRootNode)
         {
@@ -216,6 +219,52 @@ private:
             vertices.push_back(vertex);
         }
 
+        if (0)
+        {
+            for ( int i = 0; i < vertices.size(); i+=3)
+            {
+
+                // Shortcuts for vertices
+                Vertex & vv0 = vertices[i+0];
+                Vertex & vv1 = vertices[i+1];
+                Vertex & vv2 = vertices[i+2];
+
+                glm::vec3 & v0 = vv0.Position;
+                glm::vec3 & v1 = vv1.Position;
+                glm::vec3 & v2 = vv2.Position;
+
+                // Shortcuts for UVs
+                glm::vec2 & uv0 = vv0.TexCoords;
+                glm::vec2 & uv1 = vv1.TexCoords;
+                glm::vec2 & uv2 = vv2.TexCoords;
+
+                // Edges of the triangle : position delta
+                glm::vec3 deltaPos1 = v1-v0;
+                glm::vec3 deltaPos2 = v2-v0;
+
+                // UV delta
+                glm::vec2 deltaUV1 = uv1-uv0;
+                glm::vec2 deltaUV2 = uv2-uv0;
+
+                float r = 1.0f / (deltaUV1.x * deltaUV2.y - deltaUV1.y * deltaUV2.x);
+                glm::vec3 normal = glm::normalize(glm::cross(deltaPos1, deltaPos2));
+                glm::vec3 tangent = (deltaPos1 * deltaUV2.y   - deltaPos2 * deltaUV1.y)*r;
+                glm::vec3 bitangent = (deltaPos2 * deltaUV1.x   - deltaPos1 * deltaUV2.x)*r;
+
+                vv0.Normal = normal;
+                vv1.Normal = normal;
+                vv2.Normal = normal;
+
+                vv0.Tangent = tangent;
+                vv1.Tangent = tangent;
+                vv2.Tangent = tangent;
+
+                vv0.Bitangent = bitangent;
+                vv1.Bitangent = bitangent;
+                vv2.Bitangent = bitangent;
+            }
+        }
+
         // орбаботка индексов
         for(unsigned int i = 0; i < mesh->mNumFaces; i++)
         {
@@ -252,9 +301,10 @@ private:
 
         return Mesh(vertices, indices, textures);
     }
+
     std::vector<Texture> loadMaterialTextures(aiMaterial *mat, aiTextureType type, const std::string &typeName)
     {
-        bool gamma = (typeName == "texture_diffuse");
+        bool gamma = m_SrgbNames.find(typeName) != m_SrgbNames.end();
 
         std::vector<Texture> textures;
         for(unsigned int i = 0; i < mat->GetTextureCount(type); i++)

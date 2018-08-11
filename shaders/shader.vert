@@ -49,7 +49,7 @@ void main()
         vec3 direction = vec3(0.0, 0.0, 0.0);
         vec3 transformed_direction = vec3(aInstanceMatrix * vec4(direction, 1.0));
         float f = 5.0/length(transformed_direction);
-        model_loc = rotationMatrix(vec3(0.0, 1.0, 0.0), f*f*time/2) * model_loc;
+        model_loc = rotationMatrix(vec3(0.0, 1.0, 0.0), -f*f*time/2) * model_loc;
 
         model_loc = planet_model * model_loc;
     }
@@ -61,8 +61,11 @@ void main()
     vec3 T = normalize(mat3(transpose(inverse(view * model_loc))) * aTangent);
     vec3 B = normalize(mat3(transpose(inverse(view * model_loc))) * aBitangent);
     vec3 N = normalize(mat3(transpose(inverse(view * model_loc))) * aNormal);
-//    vec3 T = vec3(0.0, 1.0, 0.0);
-//    vec3 B = cross(N, T);
+//    if (dot(cross(N, T), B) < 0.0)
+//    {
+//        TexCoords = vec2(0.0, 0.0);
+//        T = T * -1.0;
+//    }
     TBN = mat3(T, B, N);
 
     gl_Position = projection * view * model_loc * vec4(aPosition, 1.0f);

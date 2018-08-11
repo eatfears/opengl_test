@@ -9,6 +9,19 @@
 class Gui
 {
 public:
+    enum display_mode
+    {
+        standart,
+        normales,
+        reflect,
+        refract,
+        texture_diffuse,
+        texture_specular,
+        texture_ambient,
+        texture_bump,
+        texture_displ,
+    };
+
     Gui();
     ~Gui();
 
@@ -21,6 +34,8 @@ public:
     bool flashlight = false;
     bool blinn = true;
     bool normal = true;
+    int m_DisplayMode = display_mode::standart;
+    float refractRatio = 1.0/1.52;
 
 
     float clear_color[3] = {};

@@ -10,6 +10,8 @@ uniform mat4 viewInv;
 uniform bool flashlight;
 uniform bool blinn;
 uniform bool normal_mapping;
+uniform int display_mode;
+uniform float refractRatio;
 
 struct Material
 {
@@ -99,40 +101,69 @@ void main()
     }
 
     vec3 viewDir = normalize(-FragPos);
-
     vec3 result;
-    result = CalcDirLight(dirLight, norm, viewDir);
-
-    for (int i = 0; i < NR_POINT_LIGHTS; i++)
-    {
-        result += CalcPointLight(pointLights[i], norm, viewDir);
-    }
-
-    if (flashlight)
-    {
-        result += CalcSpotLight(spotLight, norm, viewDir);
-    }
-
-
     vec3 I = normalize(FragPos);
+    vec3 Ref = mat3(viewInv) * refract(I, norm, refractRatio);
     vec3 R = mat3(viewInv) * reflect(I, norm);
 
-    float ratio = 1.00 / 1.52;
-    vec3 Ref = mat3(viewInv) * refract(I, norm, ratio);
+    switch (display_mode)
+    {
+    case 0:
+
+        result = CalcDirLight(dirLight, norm, viewDir);
+
+        for (int i = 0; i < NR_POINT_LIGHTS; i++)
+        {
+            result += CalcPointLight(pointLights[i], norm, viewDir);
+        }
+
+        if (flashlight)
+        {
+            result += CalcSpotLight(spotLight, norm, viewDir);
+        }
 
 
-    vec3 reflection_ratio = texture2D(material.texture_ambient1, TexCoords).rgb;
-    vec3 reflection = reflection_ratio * texture(reflectSample, R).rgb;
-    result += reflection;
+        vec3 reflection_ratio = texture2D(material.texture_ambient1, TexCoords).rgb;
+        vec3 reflection = reflection_ratio * texture(reflectSample, R).rgb;
+        result += reflection;
+        break;
+    case 1:
+        result = norm;
+        break;
+    case 2:
+        result = texture(reflectSample, R).rgb;
+        break;
+    case 3:
+        result = texture(reflectSample, Ref).rgb;
+        break;
+    case 4:
+        result = texture2D(material.texture_diffuse1, TexCoords).rgb;
+        break;
+    case 5:
+        result = texture2D(material.texture_specular1, TexCoords).rgb;
+        break;
+    case 6:
+        result = texture2D(material.texture_ambient1, TexCoords).rgb;
+        break;
+    case 7:
+        result = texture2D(material.texture_bump1, TexCoords).rgb;
+        break;
+    case 8:
+        result = texture2D(material.texture_displ1, TexCoords).rgb;
+        break;
+    default:
+        result = vec3(1.0);
+        break;
+    }
+
+
 //    result = texture(reflectSample, R).rgb;
 //    result = vec3(LinearizeDepth(gl_FragCoord.z) / zFar);
 //    result = texture2D(material.texture_bump1, TexCoords).rgb;
-//    result = norm;
+//    result = TBN[0];
+//    result = TBN[1];
     color = vec4(result, 1.0);
-//    color = vec4(1.0);
 }
-
-
 
 
 Phong CalcPhong(Phong light, vec3 normal, vec3 viewDir, vec3 lightDir)
@@ -166,7 +197,7 @@ float CalcAttenuation(Attenuation attenuation, float distance)
 {
     // затухание
     float ret = 1.0 / (attenuation.constant + attenuation.linear * distance +
-                  attenuation.quadratic * (distance * distance));
+                       attenuation.quadratic * (distance * distance));
     if (true) //gamma
     {
         ret = ret*ret;

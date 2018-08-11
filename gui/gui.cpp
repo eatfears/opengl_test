@@ -40,7 +40,7 @@ void Gui::render()
         ImGui::ShowDemoWindow();
     }
     {
-        ImGui::Begin("Hello, world!");
+        ImGui::Begin("OpenGL test");
         /*
         static float f = 0.0f;
         static int counter = 0;
@@ -62,6 +62,26 @@ void Gui::render()
         ImGui::Checkbox("Flashlight", &flashlight);
         ImGui::Checkbox("Blinn", &blinn);
         ImGui::Checkbox("Normal", &normal);
+
+        ImGui::RadioButton("Standart", &m_DisplayMode, display_mode::standart);
+        ImGui::SameLine();
+        ImGui::RadioButton("Normales", &m_DisplayMode, display_mode::normales);
+        ImGui::SameLine();
+        ImGui::RadioButton("Reflect", &m_DisplayMode, display_mode::reflect);
+        ImGui::SameLine();
+        ImGui::RadioButton("Refract", &m_DisplayMode, display_mode::refract);
+
+        ImGui::RadioButton("Diffuse", &m_DisplayMode, display_mode::texture_diffuse);
+        ImGui::SameLine();
+        ImGui::RadioButton("Specular", &m_DisplayMode, display_mode::texture_specular);
+        ImGui::SameLine();
+        ImGui::RadioButton("Ambient", &m_DisplayMode, display_mode::texture_ambient);
+        ImGui::SameLine();
+        ImGui::RadioButton("Bump", &m_DisplayMode, display_mode::texture_bump);
+        ImGui::SameLine();
+        ImGui::RadioButton("Displ", &m_DisplayMode, display_mode::texture_displ);
+
+        ImGui::SliderFloat("Refract ratio", &refractRatio, 0.0f, 1.0f);
 
         ImGui::End();
     }

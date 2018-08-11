@@ -45,7 +45,8 @@ GLfloat deltaTime = 0.0f;	// Time between current frame and last frame
 GLfloat lastFrame = 0.0f;  	// Time of last frame
 
 Gui gui;
-bool flashlight_key_pressed = false, blinn_key_pressed = false, normal_key_pressed = false;
+bool flashlight_key_pressed = false, blinn_key_pressed = false, normal_key_pressed = false, mousing_key_pressed = false;
+bool mousing = true;
 
 // The MAIN function, from here we start the application and run the game loop
 int main()
@@ -71,7 +72,7 @@ int main()
     glfwSetScrollCallback(window, scroll_callback);
 
     // GLFW Options
-//    glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
+    glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
 
     // Set this to true so GLEW knows to use a modern approach to retrieving function pointers and extensions
     glewExperimental = GL_TRUE;
@@ -84,6 +85,10 @@ int main()
     // OpenGL options
     glEnable(GL_DEPTH_TEST);
     glEnable(GL_MULTISAMPLE);
+
+//    glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
+//    glEnable(GL_POLYGON_SMOOTH);
+//    glHint(GL_POLYGON_SMOOTH_HINT, GL_NICEST);
 
     gui.init(window, "#version 330");
 
@@ -194,27 +199,28 @@ int main()
     glEnableVertexAttribArray(0);
     glBindVertexArray(0);
 
+    glm::vec3 spec(0.3f);
     lightingShader.use();
-    lightingShader.setVec3("dirLight.phong.ambient", 0.2f, 0.2f, 0.2f);
+    lightingShader.setVec3("dirLight.phong.ambient", glm::vec3(0.2f));
     lightingShader.setVec3("dirLight.phong.diffuse", 2.9f, 2.9f, 2.7f);
-    lightingShader.setVec3("dirLight.phong.specular", 1.0f, 1.0f, 1.0f);
+    lightingShader.setVec3("dirLight.phong.specular", spec);
 
 
     for (int i = 0; i < 4; ++i)
     {
         std::string name = "pointLights[" + std::to_string(i) + "]";
-        lightingShader.setVec3(name + ".phong.ambient", 0.0f, 0.0f, 0.0f);
+        lightingShader.setVec3(name + ".phong.ambient", glm::vec3(0.0f));
         lightingShader.setVec3(name + ".phong.diffuse", 0.4f, 0.5f, 2.8f);
-        lightingShader.setVec3(name + ".phong.specular", 1.0f, 1.0f, 1.0f);
+        lightingShader.setVec3(name + ".phong.specular", spec);
 
         lightingShader.setFloat(name + ".attenuation.constant",  1.0f);
         lightingShader.setFloat(name + ".attenuation.linear",    0.15f);
         lightingShader.setFloat(name + ".attenuation.quadratic", 0.035f);
     }
 
-    lightingShader.setVec3("spotLight.phong.ambient", 0.0f, 0.0f, 0.0f);
+    lightingShader.setVec3("spotLight.phong.ambient", glm::vec3(0.0f));
     lightingShader.setVec3("spotLight.phong.diffuse", 1.9f, 1.8f, 1.9f);
-    lightingShader.setVec3("spotLight.phong.specular", 1.0f, 1.0f, 1.0f);
+    lightingShader.setVec3("spotLight.phong.specular", spec);
     lightingShader.setFloat("spotLight.attenuation.constant",  1.0f);
     lightingShader.setFloat("spotLight.attenuation.linear",    0.045f);
     lightingShader.setFloat("spotLight.attenuation.quadratic", 0.0075f);
@@ -229,12 +235,12 @@ int main()
     lightingShader.setInt("material.texture_bump1", 3);
     lightingShader.setInt("material.texture_displ1", 4);
     lightingShader.setInt("reflectSample", 15);
-    lightingShader.setFloat("material.shininess", 64.0f);
+    lightingShader.setFloat("material.shininess", 128.0f);
     lightingShader.setBool("instance", false);
 
     screenShader.setInt("screenTexture", 0);
 
-    Model nanosuit("resources/objects/nanosuit/nanosuit.obj");
+    Model nanosuit("resources/objects/nanosuit/nanosuit.obj", {"texture_diffuse", "texture_specular", "texture_ambient", "texture_bump"});
     Model cyborg("resources/objects/cyborg/cyborg.obj");
     Model rock("resources/objects/rock/rock.obj");
     Model planet("resources/objects/planet/planet.obj");
@@ -501,6 +507,8 @@ int main()
         lightingShader.setBool("flashlight", gui.flashlight);
         lightingShader.setBool("blinn",  gui.blinn);
         lightingShader.setBool("normal_mapping",  gui.normal);
+        lightingShader.setInt("display_mode",  gui.m_DisplayMode);
+        lightingShader.setFloat("refractRatio",  gui.refractRatio);
 
         lightingShader.setMat4("viewInv", glm::inverse(view));
 
@@ -582,6 +590,7 @@ int main()
         lightingShader.use();
         model = glm::translate(glm::mat4(1.0f), glm::vec3(50.0f, -4.0f, -50.0f));
         model = glm::scale(model, glm::vec3(4.0f, 4.0f, 4.0f));
+        model = glm::rotate(model, currentFrame/50.0f, glm::vec3(0.0f, 1.0f, 0.0f));
         lightingShader.setMat4("model", model);
         planet.Draw(lightingShader);
 
@@ -623,6 +632,7 @@ int main()
         lightingShader.use();
         model = glm::translate(glm::mat4(1.0f), glm::vec3(0.0f, 0.5f, 0.0f));
         model = glm::scale(model, glm::vec3(0.2f));
+        model = glm::rotate(model, currentFrame, glm::vec3(0.0f, 1.0f, 0.0f));
         lightingShader.setMat4("model", model);
 
 //        glStencilFunc(GL_ALWAYS, 1, 0xFF); // каждый фрагмент обновит трафаретный буфер
@@ -633,6 +643,7 @@ int main()
 
         model = glm::translate(glm::mat4(1.0f), glm::vec3(-5.0f, 0.5f, 0.0f));
         model = glm::scale(model, glm::vec3(0.8f));
+        model = glm::rotate(model, currentFrame, glm::vec3(0.0f, 1.0f, 0.0f));
         lightingShader.setMat4("model", model);
         cyborg.Draw(lightingShader);
 
@@ -765,7 +776,6 @@ void processInput(GLFWwindow *window)
     if (glfwGetKey(window, GLFW_KEY_Q) == GLFW_PRESS && !flashlight_key_pressed)
     {
         gui.flashlight = !gui.flashlight;
-        std::cout << "Flashlight " << gui.flashlight << std::endl;
         flashlight_key_pressed = true;
     }
     if (glfwGetKey(window, GLFW_KEY_Q) == GLFW_RELEASE)
@@ -776,7 +786,6 @@ void processInput(GLFWwindow *window)
     if (glfwGetKey(window, GLFW_KEY_B) == GLFW_PRESS && !blinn_key_pressed)
     {
         gui.blinn = !gui.blinn;
-        std::cout << "Blinn " << gui.blinn << std::endl;
         blinn_key_pressed = true;
     }
     if (glfwGetKey(window, GLFW_KEY_B) == GLFW_RELEASE)
@@ -787,12 +796,29 @@ void processInput(GLFWwindow *window)
     if (glfwGetKey(window, GLFW_KEY_N) == GLFW_PRESS && !normal_key_pressed)
     {
         gui.normal = !gui.normal;
-        std::cout << "Normal " << gui.normal << std::endl;
         normal_key_pressed = true;
     }
     if (glfwGetKey(window, GLFW_KEY_N) == GLFW_RELEASE)
     {
         normal_key_pressed = false;
+    }
+
+    if (glfwGetKey(window, GLFW_KEY_GRAVE_ACCENT) == GLFW_PRESS && !mousing_key_pressed)
+    {
+        mousing = !mousing;
+        if (!mousing)
+        {
+            glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_NORMAL);
+        }
+        else
+        {
+            glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
+        }
+        mousing_key_pressed = true;
+    }
+    if (glfwGetKey(window, GLFW_KEY_GRAVE_ACCENT) == GLFW_RELEASE)
+    {
+        mousing_key_pressed = false;
     }
 }
 // Is called whenever a key is pressed/released via GLFW
@@ -854,7 +880,10 @@ void mouse_callback(GLFWwindow* window, double xpos, double ypos)
     lastX = xpos;
     lastY = ypos;
 
-    camera.processMouseMovement(xoffset, yoffset);
+    if (mousing)
+    {
+        camera.processMouseMovement(xoffset, yoffset);
+    }
 }
 
 void scroll_callback(GLFWwindow* window, double xoffset, double yoffset)
