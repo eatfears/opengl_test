@@ -62,6 +62,7 @@ void Gui::render()
         ImGui::Checkbox("Flashlight", &flashlight);
         ImGui::Checkbox("Blinn", &blinn);
         ImGui::Checkbox("Normal", &normal);
+        ImGui::Checkbox("Rotate", &rotate);
 
         ImGui::RadioButton("Standart", &m_DisplayMode, display_mode::standart);
         ImGui::SameLine();

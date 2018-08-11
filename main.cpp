@@ -45,7 +45,7 @@ GLfloat deltaTime = 0.0f;	// Time between current frame and last frame
 GLfloat lastFrame = 0.0f;  	// Time of last frame
 
 Gui gui;
-bool flashlight_key_pressed = false, blinn_key_pressed = false, normal_key_pressed = false, mousing_key_pressed = false;
+bool flashlight_key_pressed = false, blinn_key_pressed = false, normal_key_pressed = false, mousing_key_pressed = false, rotate_key_pressed = false;
 bool mousing = true;
 
 // The MAIN function, from here we start the application and run the game loop
@@ -556,6 +556,7 @@ int main()
         lightingShader.setBool("flashlight", gui.flashlight);
         lightingShader.setBool("blinn",  gui.blinn);
         lightingShader.setBool("normal_mapping",  gui.normal);
+        lightingShader.setBool("rotate",  gui.rotate);
         lightingShader.setInt("display_mode",  gui.m_DisplayMode);
         lightingShader.setFloat("refractRatio",  gui.refractRatio);
 
@@ -685,7 +686,10 @@ int main()
         lightingShader.use();
         model = glm::translate(glm::mat4(1.0f), glm::vec3(0.0f, 0.5f, 0.0f));
         model = glm::scale(model, glm::vec3(0.2f));
-        model = glm::rotate(model, currentFrame, glm::vec3(0.0f, 1.0f, 0.0f));
+        if (gui.rotate)
+        {
+            model = glm::rotate(model, currentFrame, glm::vec3(0.0f, 1.0f, 0.0f));
+        }
         lightingShader.setMat4("model", model);
 
 //        glStencilFunc(GL_ALWAYS, 1, 0xFF); // каждый фрагмент обновит трафаретный буфер
@@ -696,7 +700,10 @@ int main()
 
         model = glm::translate(glm::mat4(1.0f), glm::vec3(-5.0f, 0.5f, 0.0f));
         model = glm::scale(model, glm::vec3(0.8f));
-        model = glm::rotate(model, currentFrame, glm::vec3(0.0f, 1.0f, 0.0f));
+        if (gui.rotate)
+        {
+            model = glm::rotate(model, currentFrame, glm::vec3(0.0f, 1.0f, 0.0f));
+        }
         lightingShader.setMat4("model", model);
         cyborg.Draw(lightingShader);
 
@@ -854,6 +861,16 @@ void processInput(GLFWwindow *window)
     if (glfwGetKey(window, GLFW_KEY_N) == GLFW_RELEASE)
     {
         normal_key_pressed = false;
+    }
+
+    if (glfwGetKey(window, GLFW_KEY_E) == GLFW_PRESS && !rotate_key_pressed)
+    {
+        gui.rotate = !gui.rotate;
+        rotate_key_pressed = true;
+    }
+    if (glfwGetKey(window, GLFW_KEY_E) == GLFW_RELEASE)
+    {
+        rotate_key_pressed = false;
     }
 
     if (glfwGetKey(window, GLFW_KEY_GRAVE_ACCENT) == GLFW_PRESS && !mousing_key_pressed)
