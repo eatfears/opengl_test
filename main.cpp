@@ -550,14 +550,18 @@ int main()
 
         lightingShader.use();
         lightingShader.setVec3("dirLight.direction", glm::vec3(glm::vec4(-0.3f, -0.5f, -0.2f, 0.0f)));
+        lightingShader.setVec3("lightDir1", glm::vec3(glm::vec4(-0.3f, -0.5f, -0.2f, 0.0f)));
 
         for (int i = 0; i < 4; ++i)
         {
             lightingShader.setVec3("pointLights[" + std::to_string(i) + "].position", glm::vec3(/*view**/glm::vec4(pointLightPositions[i], 1.0f)));
+            lightingShader.setVec3("lightPos2[" + std::to_string(i) + "]", pointLightPositions[i]);
         }
 
         lightingShader.setVec3("spotLight.position",  glm::vec3(/*view**/glm::vec4(camera.Position, 1.0f) + glm::inverse(view) * glm::vec4(0.2, -0.1, -0.1, 0.0)));
         lightingShader.setVec3("spotLight.direction", glm::vec3(/*view**/glm::vec4(camera.Front, 0.0f)));
+        lightingShader.setVec3("lightPos3", camera.Position);
+        lightingShader.setVec3("lightDir3", camera.Front);
 
         lightingShader.setBool("flashlight", gui.flashlight);
         lightingShader.setBool("blinn",  gui.blinn);

@@ -18,9 +18,24 @@ uniform bool instance;
 uniform float time;
 uniform mat4 planet_model;
 
+uniform vec3 viewPos;
+
 out vec3 FragPos;
 out vec2 TexCoords;
-out mat3 TBN;
+out mat3 WorldToTangent;
+out mat3 TangentToWorld;
+
+uniform vec3 lightDir1;
+uniform vec3 lightPos2[4];
+uniform vec3 lightDir3;
+uniform vec3 lightPos3;
+
+out vec3 TangentLightDir1;
+out vec3 TangentLightPos2[4];
+out vec3 TangentLightDir3;
+out vec3 TangentLightPos3;
+out vec3 TangentViewPos;
+out vec3 TangentFragPos;
 
 mat4 rotationMatrix(vec3 axis, float angle)
 {
@@ -68,7 +83,24 @@ void main()
 //        TexCoords = vec2(0.0, 0.0);
 //        T = T * -1.0;
 //    }
-    TBN = mat3(T, B, N);
+    B = cross(N, T)*dot(cross(N, T), B);
+    mat3 TBN = mat3(T, B, N);
+    TangentToWorld = TBN;
+    WorldToTangent = transpose(TBN);
+
+    TangentLightDir1 = WorldToTangent * lightDir1;
+    for (int i = 0; i < 4; i++)
+    {
+        TangentLightPos2[i] = WorldToTangent * lightPos2[i];
+    }
+    TangentLightDir3 = WorldToTangent * lightDir3;
+    TangentLightPos3 = WorldToTangent * lightPos3;
+
+
+    TangentViewPos  = WorldToTangent * viewPos;
+    TangentFragPos  = WorldToTangent * vec3(modelView * vec4(aPosition, 1.0f));
+
+
 
     gl_Position = projection * view * model_loc * vec4(aPosition, 1.0f);
 }

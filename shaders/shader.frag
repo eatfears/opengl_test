@@ -3,7 +3,17 @@ out vec4 color;
 
 in vec3 FragPos;
 in vec2 TexCoords;
-in mat3 TBN;
+
+in mat3 WorldToTangent;
+in mat3 TangentToWorld;
+
+in vec3 TangentLightDir1;
+in vec3 TangentLightPos2[4];
+in vec3 TangentLightDir3;
+in vec3 TangentLightPos3;
+
+in vec3 TangentViewPos;
+in vec3 TangentFragPos;
 
 uniform vec3 viewPos;
 uniform mat4 viewInv;
@@ -70,7 +80,7 @@ struct SpotLight {
 uniform SpotLight spotLight;
 
 Phong CalcDirLight(DirLight light, vec3 normal, vec3 viewDir);
-Phong CalcPointLight(PointLight light, vec3 normal, vec3 viewDir);
+Phong CalcPointLight(PointLight light, vec3 normal, vec3 viewDir, vec3 tanPos);
 Phong CalcSpotLight(SpotLight light, vec3 normal, vec3 viewDir);
 
 float zNear = 0.1;
@@ -94,13 +104,15 @@ void main()
             norm = vec3(0.5, 0.5, 1.0);   //fake
         }
         norm = normalize(norm * 2.0 - 1.0);
-        norm = normalize(TBN * norm);
+//        norm = normalize(TBN * norm);
     }
     else
     {
-        norm = TBN[2];
+        norm = vec3(0.0, 0.0, 1.0);
+//        norm = TBN[2];
     }
 
+    vec3 tangentViewDir = normalize(TangentViewPos-TangentFragPos);
     vec3 viewDir = normalize(viewPos-FragPos);
     vec3 result, R, Ref;
 
@@ -111,20 +123,20 @@ void main()
         vec3 diffuse = vec3(0.0);
         vec3 specular = vec3(0.0);
 
-        p = CalcDirLight(dirLight, norm, viewDir);
+        p = CalcDirLight(dirLight, norm, tangentViewDir);
         diffuse += p.ambient + p.diffuse;
         specular += p.specular;
 
-        for (int i = 0; i < NR_POINT_LIGHTS; i++)
+        for (int i = 0; i < 4; i++)
         {
-            p = CalcPointLight(pointLights[i], norm, viewDir);
+            p = CalcPointLight(pointLights[i], norm, tangentViewDir, TangentLightPos2[i]);
             diffuse += p.ambient + p.diffuse;
             specular += p.specular;
         }
 
         if (flashlight)
         {
-            p = CalcSpotLight(spotLight, norm, viewDir);
+            p = CalcSpotLight(spotLight, norm, tangentViewDir);
             diffuse += p.ambient + p.diffuse;
             specular += p.specular;
         }
@@ -135,20 +147,20 @@ void main()
         vec3 reflection_ratio = texture2D(material.texture_ambient1, TexCoords).rgb;
         if (length(reflection_ratio) > 0)
         {
-            R = /*mat3(viewInv) **/ reflect(-viewDir, norm);
+            R = /*mat3(viewInv) **/ reflect(-viewDir, TangentToWorld*norm);
             vec3 reflection = reflection_ratio * texture(reflectSample, R).rgb;
             result += reflection;
         }
         break;
     case 1:
-        result = norm;
+        result = TangentToWorld*norm;
         break;
     case 2:
-        R = /*mat3(viewInv) **/ reflect(-viewDir, norm);
+        R = /*mat3(viewInv) **/ reflect(-viewDir, TangentToWorld*norm);
         result = texture(reflectSample, R).rgb;
         break;
     case 3:
-        Ref = /*mat3(viewInv) **/ refract(-viewDir, norm, refractRatio);
+        Ref = /*mat3(viewInv) **/ refract(-viewDir, TangentToWorld*norm, refractRatio);
         result = texture(reflectSample, Ref).rgb;
         break;
     case 4:
@@ -221,22 +233,22 @@ float CalcAttenuation(Attenuation attenuation, float distance)
 
 Phong CalcDirLight(DirLight light, vec3 normal, vec3 viewDir)
 {
-    vec3 lightDir = normalize(-light.direction);
+    vec3 lightDir = normalize(-TangentLightDir1);
     return CalcPhong(light.phong, normal, viewDir, lightDir, 1.0);
 }
 
-Phong CalcPointLight(PointLight light, vec3 normal, vec3 viewDir)
+Phong CalcPointLight(PointLight light, vec3 normal, vec3 viewDir, vec3 tanPos)
 {
-    vec3 lightDir = normalize(light.position - FragPos);
-    return CalcPhong(light.phong, normal, viewDir, lightDir, CalcAttenuation(light.attenuation, length(light.position - FragPos)));
+    vec3 lightDir = normalize(tanPos - TangentFragPos);
+    return CalcPhong(light.phong, normal, viewDir, lightDir, CalcAttenuation(light.attenuation, length(tanPos - TangentFragPos)));
 }
 
 Phong CalcSpotLight(SpotLight light, vec3 normal, vec3 viewDir)
 {
-    vec3 lightDir = normalize(light.position - FragPos);
-    Phong p = CalcPhong(light.phong, normal, viewDir, lightDir, CalcAttenuation(light.attenuation, length(light.position - FragPos)));
+    vec3 lightDir = normalize(TangentLightPos3 - TangentFragPos);
+    Phong p = CalcPhong(light.phong, normal, viewDir, lightDir, CalcAttenuation(light.attenuation, length(TangentLightPos3 - TangentFragPos)));
 
-    float theta = dot(lightDir, normalize(-light.direction));
+    float theta = dot(lightDir, normalize(-TangentLightDir3));
     float epsilon   = light.cutOff - light.outerCutOff;
     float intensity = clamp((theta - light.outerCutOff) / epsilon, 0.0, 1.0);
 
