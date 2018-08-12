@@ -140,6 +140,7 @@ int main()
     GLuint boxDiffuseTexture, boxSpecularTexture, vegetationTexture, windowsTexture, skyboxCubemapTexture;
     boxDiffuseTexture = TextureFromFile("resources/textures/container2.png", true);
     boxSpecularTexture = TextureFromFile("resources/textures/container2_specular.png", false);
+
     vegetationTexture = TextureFromFile("resources/textures/grass.png", true, GL_CLAMP_TO_EDGE);
     windowsTexture = TextureFromFile("resources/textures/window.png", true, GL_CLAMP_TO_EDGE);
 
@@ -151,6 +152,11 @@ int main()
     GLuint brickwall, brickwallNormal;
     brickwall = TextureFromFile("resources/textures/brickwall.jpg", true);
     brickwallNormal = TextureFromFile("resources/textures/brickwall_normal.jpg", false);
+
+    GLuint toyDiffuse, toyNormal, toyDispl;
+    toyDiffuse = TextureFromFile("resources/textures/toy_box_diffuse.png", true);
+    toyNormal = TextureFromFile("resources/textures/toy_box_normal.png", false);
+    toyDispl = TextureFromFile("resources/textures/toy_box_disp.png", false);
 
     skyboxCubemapTexture = loadCubemap(cubemapFaces);
 
@@ -550,7 +556,7 @@ int main()
             lightingShader.setVec3("pointLights[" + std::to_string(i) + "].position", glm::vec3(/*view**/glm::vec4(pointLightPositions[i], 1.0f)));
         }
 
-        lightingShader.setVec3("spotLight.position",  glm::vec3(/*view**/glm::vec4(camera.Position, 1.0f)) + glm::vec3(0.2, -0.1, -0.1));
+        lightingShader.setVec3("spotLight.position",  glm::vec3(/*view**/glm::vec4(camera.Position, 1.0f) + glm::inverse(view) * glm::vec4(0.2, -0.1, -0.1, 0.0)));
         lightingShader.setVec3("spotLight.direction", glm::vec3(/*view**/glm::vec4(camera.Front, 0.0f)));
 
         lightingShader.setBool("flashlight", gui.flashlight);
@@ -627,6 +633,29 @@ int main()
         model = glm::rotate(model, glm::radians(180.0f), glm::vec3(0.0f, 1.0f, 0.0f));
         lightingShader.setMat4("model", model);
         glDrawArrays(GL_TRIANGLES, 0, 6);
+        glBindVertexArray(0);
+
+        // Draw toy
+        glActiveTexture(GL_TEXTURE0);
+        glBindTexture(GL_TEXTURE_2D, toyDiffuse);
+        lightingShader.setInt("material.texture_diffuse1", 0);
+        glActiveTexture(GL_TEXTURE1);
+        glBindTexture(GL_TEXTURE_2D, 0);
+        lightingShader.setInt("material.texture_specular1", 1);
+        glActiveTexture(GL_TEXTURE2);
+        glBindTexture(GL_TEXTURE_2D, 0);
+        lightingShader.setInt("material.texture_ambient1", 2);
+        glActiveTexture(GL_TEXTURE3);
+        glBindTexture(GL_TEXTURE_2D, toyNormal);
+        lightingShader.setInt("material.texture_bump1", 3);
+        glActiveTexture(GL_TEXTURE4);
+        glBindTexture(GL_TEXTURE_2D, toyDispl);
+        lightingShader.setInt("material.texture_displ1", 4);
+        glActiveTexture(GL_TEXTURE0);
+        glBindVertexArray(containerVAO);
+        model = glm::translate(glm::mat4(1.0f), glm::vec3(9.0f, 0.0f, 0.0f));
+        lightingShader.setMat4("model", model);
+        glDrawArrays(GL_TRIANGLES, 0, 36);
         glBindVertexArray(0);
         /*********************************************/
 

@@ -129,8 +129,8 @@ void main()
             specular += p.specular;
         }
 
-        result = diffuse * texture2D(material.texture_diffuse1, TexCoords).rgb
-                + specular * texture2D(material.texture_specular1, TexCoords).rgb;
+        result = diffuse * texture2D(material.texture_diffuse1, TexCoords).rgb +
+                specular * texture2D(material.texture_specular1, TexCoords).rgb;
 
         vec3 reflection_ratio = texture2D(material.texture_ambient1, TexCoords).rgb;
         if (length(reflection_ratio) > 0)
@@ -171,11 +171,11 @@ void main()
         break;
     }
 
-//    result = texture(reflectSample, R).rgb;
-//    result = vec3(LinearizeDepth(gl_FragCoord.z) / zFar);
-//    result = texture2D(material.texture_bump1, TexCoords).rgb;
-//    result = TBN[0];
-//    result = TBN[1];
+    //    result = texture(reflectSample, R).rgb;
+    //    result = vec3(LinearizeDepth(gl_FragCoord.z) / zFar);
+    //    result = texture2D(material.texture_bump1, TexCoords).rgb;
+    //    result = TBN[0];
+    //    result = TBN[1];
     color = vec4(result, 1.0);
 }
 
