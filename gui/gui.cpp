@@ -62,6 +62,8 @@ void Gui::render()
         ImGui::Checkbox("Flashlight", &flashlight);
         ImGui::Checkbox("Blinn", &blinn);
         ImGui::Checkbox("Normal", &normal);
+        ImGui::SameLine();
+        ImGui::Checkbox("Paralax", &paralax);
         ImGui::Checkbox("Rotate", &rotate);
 
         ImGui::RadioButton("Standart", &m_DisplayMode, display_mode::standart);
@@ -83,6 +85,7 @@ void Gui::render()
         ImGui::RadioButton("Displ", &m_DisplayMode, display_mode::texture_displ);
 
         ImGui::SliderFloat("Refract ratio", &refractRatio, 0.0f, 1.0f);
+        ImGui::SliderFloat("Height scale", &heightScale, 0.0f, 0.7f);
 
         ImGui::End();
     }

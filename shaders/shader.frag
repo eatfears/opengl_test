@@ -21,8 +21,10 @@ uniform mat4 viewInv;
 uniform bool flashlight;
 uniform bool blinn;
 uniform bool normal_mapping;
+uniform bool paralax_mapping;
 uniform int display_mode;
 uniform float refractRatio;
+uniform float heightScale;
 
 struct Material
 {
@@ -93,6 +95,13 @@ float LinearizeDepth(float depth)
     return (2.0 * zNear * zFar) / (zFar + zNear - z * (zFar - zNear));
 }
 
+vec2 ParallaxMapping(vec2 texCoords, vec3 viewDir)
+{
+    float height =  texture2D(material.texture_displ1, texCoords).r;
+    vec2 p = viewDir.xy / viewDir.z * (height * heightScale);
+    return texCoords - p;
+}
+
 void main()
 {
     vec3 norm;
@@ -101,15 +110,16 @@ void main()
         norm = (texture2D(material.texture_bump1, TexCoords).rgb);
         if (length(norm) == 0.0)
         {
-            norm = vec3(0.5, 0.5, 1.0);   //fake
+            norm = vec3(0.0, 0.0, 1.0);
         }
-        norm = normalize(norm * 2.0 - 1.0);
-//        norm = normalize(TBN * norm);
+        else
+        {
+            norm = normalize(norm * 2.0 - 1.0);
+        }
     }
     else
     {
         norm = vec3(0.0, 0.0, 1.0);
-//        norm = TBN[2];
     }
 
     vec3 tangentViewDir = normalize(TangentViewPos-TangentFragPos);
@@ -141,10 +151,22 @@ void main()
             specular += p.specular;
         }
 
-        result = diffuse * texture2D(material.texture_diffuse1, TexCoords).rgb +
-                specular * texture2D(material.texture_specular1, TexCoords).rgb;
+        vec2 texCoords;
+        if (paralax_mapping)
+        {
+            texCoords = ParallaxMapping(TexCoords, tangentViewDir);
+            if(texCoords.x > 1.0 || texCoords.y > 1.0 || texCoords.x < 0.0 || texCoords.y < 0.0)
+                discard;
+        }
+        else
+        {
+            texCoords = TexCoords;
+        }
 
-        vec3 reflection_ratio = texture2D(material.texture_ambient1, TexCoords).rgb;
+        result = diffuse * texture2D(material.texture_diffuse1, texCoords).rgb +
+                specular * texture2D(material.texture_specular1, texCoords).rgb;
+
+        vec3 reflection_ratio = texture2D(material.texture_ambient1, texCoords).rgb;
         if (length(reflection_ratio) > 0)
         {
             R = /*mat3(viewInv) **/ reflect(-viewDir, TangentToWorld*norm);

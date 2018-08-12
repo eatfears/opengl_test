@@ -34,9 +34,11 @@ public:
     bool flashlight = false;
     bool blinn = true;
     bool normal = true;
+    bool paralax = true;
     bool rotate = true;
     int m_DisplayMode = display_mode::standart;
     float refractRatio = 1.0/1.52;
+    float heightScale = 0.1;
 
 
     float clear_color[3] = {};

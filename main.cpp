@@ -45,7 +45,8 @@ GLfloat deltaTime = 0.0f;	// Time between current frame and last frame
 GLfloat lastFrame = 0.0f;  	// Time of last frame
 
 Gui gui;
-bool flashlight_key_pressed = false, blinn_key_pressed = false, normal_key_pressed = false, mousing_key_pressed = false, rotate_key_pressed = false;
+bool flashlight_key_pressed = false, blinn_key_pressed = false, normal_key_pressed = false, mousing_key_pressed = false,
+rotate_key_pressed = false, paralax_key_pressed = false;
 bool mousing = true;
 
 // The MAIN function, from here we start the application and run the game loop
@@ -566,8 +567,10 @@ int main()
         lightingShader.setBool("flashlight", gui.flashlight);
         lightingShader.setBool("blinn",  gui.blinn);
         lightingShader.setBool("normal_mapping",  gui.normal);
+        lightingShader.setBool("paralax_mapping",  gui.paralax);
         lightingShader.setInt("display_mode",  gui.m_DisplayMode);
         lightingShader.setFloat("refractRatio",  gui.refractRatio);
+        lightingShader.setFloat("heightScale",  gui.heightScale);
 
         lightingShader.setVec3("viewPos", camera.Position);
         //lightingShader.setMat4("viewInv", glm::inverse(view));
@@ -904,6 +907,16 @@ void processInput(GLFWwindow *window)
     if (glfwGetKey(window, GLFW_KEY_E) == GLFW_RELEASE)
     {
         rotate_key_pressed = false;
+    }
+
+    if (glfwGetKey(window, GLFW_KEY_P) == GLFW_PRESS && !paralax_key_pressed)
+    {
+        gui.paralax = !gui.paralax;
+        paralax_key_pressed = true;
+    }
+    if (glfwGetKey(window, GLFW_KEY_P) == GLFW_RELEASE)
+    {
+        paralax_key_pressed = false;
     }
 
     if (glfwGetKey(window, GLFW_KEY_GRAVE_ACCENT) == GLFW_PRESS && !mousing_key_pressed)
