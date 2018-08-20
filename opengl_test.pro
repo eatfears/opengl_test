@@ -33,8 +33,8 @@ HEADERS += \
 DEFINES += QT_DEPRECATED_WARNINGS
 
 DISTFILES += \
-    shaders/shader.vert \
-    shaders/shader.frag \
+    shaders/shadow/shader.vert \
+    shaders/shadow/shader.frag \
     shaders/lampshader.frag \
     shaders/simpleshader.vert \
     shaders/scalingshader.vert \
@@ -44,4 +44,8 @@ DISTFILES += \
     shaders/postshader.vert \
     shaders/skyboxshader.frag \
     shaders/skyboxshader.vert \
-    shaders/homes.geom
+    shaders/g_houses.vert \
+    shaders/g_dummy.vert \
+    shaders/normales/g_normales.vert \
+    shaders/normales/normales.vert \
+    shaders/normales/normales.frag

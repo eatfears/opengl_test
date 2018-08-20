@@ -15,6 +15,7 @@ public:
         normales,
         reflect,
         refract,
+        fresnel,
         texture_diffuse,
         texture_specular,
         texture_ambient,

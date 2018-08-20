@@ -41,22 +41,7 @@ void Gui::render()
     }
     {
         ImGui::Begin("OpenGL test");
-        /*
-        static float f = 0.0f;
-        static int counter = 0;
 
-        ImGui::Text("This is some useful text.");               // Display some text (you can use a format strings too)
-        ImGui::Checkbox("Demo Window", &show_demo_window);      // Edit bools storing our window open/close state
-        ImGui::Checkbox("Another Window", &show_another_window);
-
-        ImGui::SliderFloat("float", &f, 0.0f, 1.0f);            // Edit 1 float using a slider from 0.0f to 1.0f
-        ImGui::ColorEdit3("clear color", (float*)&clear_color); // Edit 3 floats representing a color
-
-        if (ImGui::Button("Button"))                            // Buttons return true when clicked (most widgets return true when edited/activated)
-            counter++;
-        ImGui::SameLine();
-        ImGui::Text("counter = %d", counter);
-        */
         ImGui::Text("Application average %.3f ms/frame (%.1f FPS)", 1000.0f / ImGui::GetIO().Framerate, ImGui::GetIO().Framerate);
 
         ImGui::Checkbox("Flashlight", &flashlight);
@@ -66,23 +51,29 @@ void Gui::render()
         ImGui::Checkbox("Paralax", &paralax);
         ImGui::Checkbox("Rotate", &rotate);
 
-        ImGui::RadioButton("Standart", &m_DisplayMode, display_mode::standart);
-        ImGui::SameLine();
-        ImGui::RadioButton("Normales", &m_DisplayMode, display_mode::normales);
-        ImGui::SameLine();
-        ImGui::RadioButton("Reflect", &m_DisplayMode, display_mode::reflect);
-        ImGui::SameLine();
-        ImGui::RadioButton("Refract", &m_DisplayMode, display_mode::refract);
+        const char* items[] = { "Standart", "Normales", "Reflect", "Refract", "Fresnel", "Diffuse", "Specular", "Ambient", "Bump", "Displ" };
+        const int item_modes[] = { display_mode::standart, display_mode::normales, display_mode::reflect, display_mode::refract, display_mode::fresnel,
+                                   display_mode::texture_diffuse, display_mode::texture_specular,
+                                   display_mode::texture_ambient, display_mode::texture_bump, display_mode::texture_displ };
+        static const char* item_current = items[0];
+        if (ImGui::BeginCombo("Display mode", item_current))
+        {
+            for (int i = 0; i < IM_ARRAYSIZE(items); i++)
+            {
+                bool is_selected = (item_current == items[i]);
+                if (ImGui::Selectable(items[i], is_selected))
+                {
+                    item_current = items[i];
+                    m_DisplayMode = item_modes[i];
+                }
+                if (is_selected)
+                {
+                    ImGui::SetItemDefaultFocus();
+                }
+            }
+            ImGui::EndCombo();
+        }
 
-        ImGui::RadioButton("Diffuse", &m_DisplayMode, display_mode::texture_diffuse);
-        ImGui::SameLine();
-        ImGui::RadioButton("Specular", &m_DisplayMode, display_mode::texture_specular);
-        ImGui::SameLine();
-        ImGui::RadioButton("Ambient", &m_DisplayMode, display_mode::texture_ambient);
-        ImGui::SameLine();
-        ImGui::RadioButton("Bump", &m_DisplayMode, display_mode::texture_bump);
-        ImGui::SameLine();
-        ImGui::RadioButton("Displ", &m_DisplayMode, display_mode::texture_displ);
 
         ImGui::SliderFloat("Refract ratio", &refractRatio, 0.0f, 1.0f);
         ImGui::SliderFloat("Height scale", &heightScale, 0.0f, 0.7f);

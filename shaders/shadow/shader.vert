@@ -20,22 +20,25 @@ uniform mat4 planet_model;
 
 uniform vec3 viewPos;
 
-out vec3 FragPos;
-out vec2 TexCoords;
-out mat3 WorldToTangent;
-out mat3 TangentToWorld;
-
 uniform vec3 lightDir1;
 uniform vec3 lightPos2[4];
 uniform vec3 lightDir3;
 uniform vec3 lightPos3;
 
-out vec3 TangentLightDir1;
-out vec3 TangentLightPos2[4];
-out vec3 TangentLightDir3;
-out vec3 TangentLightPos3;
-out vec3 TangentViewPos;
-out vec3 TangentFragPos;
+out VS_OUT
+{
+    vec3 FragPos;
+    vec2 TexCoords;
+    mat3 WorldToTangent;
+    mat3 TangentToWorld;
+
+    vec3 TangentLightDir1;
+    vec3 TangentLightPos2[4];
+    vec3 TangentLightDir3;
+    vec3 TangentLightPos3;
+    vec3 TangentViewPos;
+    vec3 TangentFragPos;
+} vs_out;
 
 mat4 rotationMatrix(vec3 axis, float angle)
 {
@@ -71,8 +74,8 @@ void main()
 
     mat4 modelView = /*view **/ model_loc;
     mat3 modelViewInverseTranspose = mat3(transpose(inverse(modelView)));
-    FragPos = vec3(modelView * vec4(aPosition, 1.0f));
-    TexCoords = aTexCoords;
+    vs_out.FragPos = vec3(modelView * vec4(aPosition, 1.0f));
+    vs_out.TexCoords = aTexCoords;
 
 
     vec3 T = normalize(modelViewInverseTranspose * aTangent);
@@ -85,20 +88,21 @@ void main()
 //    }
     B = cross(N, T)*dot(cross(N, T), B);
     mat3 TBN = mat3(T, B, N);
-    TangentToWorld = TBN;
-    WorldToTangent = transpose(TBN);
+    mat3 TBN_inv = transpose(TBN);
+    vs_out.TangentToWorld = TBN;
+    vs_out.WorldToTangent = TBN_inv;
 
-    TangentLightDir1 = WorldToTangent * lightDir1;
+    vs_out.TangentLightDir1 = TBN_inv * lightDir1;
     for (int i = 0; i < 4; i++)
     {
-        TangentLightPos2[i] = WorldToTangent * lightPos2[i];
+        vs_out.TangentLightPos2[i] = TBN_inv * lightPos2[i];
     }
-    TangentLightDir3 = WorldToTangent * lightDir3;
-    TangentLightPos3 = WorldToTangent * lightPos3;
+    vs_out.TangentLightDir3 = TBN_inv * lightDir3;
+    vs_out.TangentLightPos3 = TBN_inv * lightPos3;
 
 
-    TangentViewPos  = WorldToTangent * viewPos;
-    TangentFragPos  = WorldToTangent * vec3(modelView * vec4(aPosition, 1.0f));
+    vs_out.TangentViewPos  = TBN_inv * viewPos;
+    vs_out.TangentFragPos  = TBN_inv * vec3(modelView * vec4(aPosition, 1.0f));
 
 
 

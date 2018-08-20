@@ -11,100 +11,37 @@
 
 class Shader
 {
-public:
-    GLuint m_Program;
     std::string vertex_path;
     std::string fragment_path;
+    std::string geometry_path;
+
+    GLint success;
+    GLchar infoLog[512];
+
 public:
+    GLuint m_Program;
 
     Shader(const std::string &vertex_path, const std::string &fragment_path)
         : vertex_path(vertex_path), fragment_path(fragment_path)
     {
-        // 1. Получаем исходный код шейдера из filePath
-        std::string vertex_code;
-        std::string fragment_code;
-        std::ifstream v_shader_file;
-        std::ifstream f_shader_file;
-
-        // Удостоверимся, что ifstream объекты могут выкидывать исключения
-        v_shader_file.exceptions(std::ifstream::badbit);
-        f_shader_file.exceptions(std::ifstream::badbit);
-        try
-        {
-            // Открываем файлы
-            v_shader_file.open(vertex_path);
-            f_shader_file.open(fragment_path);
-            std::stringstream v_shader_stream, f_shader_stream;
-            // Считываем данные в потоки
-            v_shader_stream << v_shader_file.rdbuf();
-            f_shader_stream << f_shader_file.rdbuf();
-            // Закрываем файлы
-            v_shader_file.close();
-            f_shader_file.close();
-            // Преобразовываем потоки в массив GLchar
-            vertex_code = v_shader_stream.str();
-            fragment_code = f_shader_stream.str();
-        }
-        catch(std::ifstream::failure &e)
-        {
-            std::cout << "ERROR::SHADER::FILE_NOT_SUCCESFULLY_READ: " << e.what() << std::endl;
-            exit(1);
-        }
-        const GLchar* v_shader_code = vertex_code.c_str();
-        const GLchar* f_shader_code = fragment_code.c_str();
-
-        /***********************/
-
-        GLuint vertex, fragment;
-        GLint success;
-        GLchar infoLog[512];
-
-        // Вершинный шейдер
-        vertex = glCreateShader(GL_VERTEX_SHADER);
-        glShaderSource(vertex, 1, &v_shader_code, NULL);
-        glCompileShader(vertex);
-        // Если есть ошибки - вывести их
-        glGetShaderiv(vertex, GL_COMPILE_STATUS, &success);
-        if (!success)
-        {
-            glGetShaderInfoLog(vertex, 512, NULL, infoLog);
-            std::cout << "ERROR::SHADER::VERTEX::COMPILATION_FAILED\n" << infoLog << std::endl;
-            exit(1);
-        };
-
-        // Фрагментный шейдер
-        fragment = glCreateShader(GL_FRAGMENT_SHADER);
-        glShaderSource(fragment, 1, &f_shader_code, NULL);
-        glCompileShader(fragment);
-        // Если есть ошибки - вывести их
-        glGetShaderiv(fragment, GL_COMPILE_STATUS, &success);
-        if (!success)
-        {
-            glGetShaderInfoLog(vertex, 512, NULL, infoLog);
-            std::cout << "ERROR::SHADER::FRAGMENT::COMPILATION_FAILED\n" << infoLog << std::endl;
-            exit(1);
-        };
-
-
-        /***********************/
-
         // Шейдерная программа
         this->m_Program = glCreateProgram();
-        glAttachShader(this->m_Program, vertex);
-        glAttachShader(this->m_Program, fragment);
-        glLinkProgram(this->m_Program);
-        //Если есть ошибки - вывести их
-        glGetProgramiv(this->m_Program, GL_LINK_STATUS, &success);
-        if (!success)
-        {
-            glGetProgramInfoLog(this->m_Program, 512, NULL, infoLog);
-            std::cout << "ERROR::SHADER::PROGRAM::LINKING_FAILED\n" << infoLog << std::endl;
-            exit(1);
-        }
 
-        // Удаляем шейдеры, поскольку они уже в программу и нам больше не нужны.
-        glDeleteShader(vertex);
-        glDeleteShader(fragment);
+        createShader(vertex_path, GL_VERTEX_SHADER);
+        createShader(fragment_path, GL_FRAGMENT_SHADER);
+        linkProgram();
+    }
+
+    void setGeometryShader(const std::string &path)
+    {
+        geometry_path = path;
+        createShader(geometry_path, GL_GEOMETRY_SHADER);
+        linkProgram();
+    }
+
+    ~Shader()
+    {
+        glDeleteProgram(m_Program);
     }
 
     void use()
@@ -190,6 +127,75 @@ private:
         }
 
         return location;
+    }
+
+    std::string readFile(const std::string &path)
+    {
+        std::string ret;
+        std::ifstream file_stream;
+        std::stringstream shader_stream;
+
+        file_stream.exceptions(std::ifstream::badbit);
+        file_stream.exceptions(std::ifstream::failbit);
+
+        try
+        {
+            file_stream.open(path);
+            shader_stream << file_stream.rdbuf();
+            file_stream.close();
+
+            ret = shader_stream.str();
+        }
+        catch(std::ifstream::failure &e)
+        {
+            std::cout << "ERROR::SHADER::FILE_NOT_SUCCESFULLY_READ: " << e.what() << "\n" << path << std::endl;
+            exit(1);
+        }
+        return ret;
+    }
+
+    GLuint createShader(const std::string &shader_path, GLuint shader_type)
+    {
+        std::string shader_str = readFile(shader_path);
+        const GLchar* p_shader_code = shader_str.c_str();
+
+        /***********************/
+
+        GLuint shader_id;
+
+        // Вершинный шейдер
+        shader_id = glCreateShader(shader_type);
+        glShaderSource(shader_id, 1, &p_shader_code, NULL);
+        glCompileShader(shader_id);
+        // Если есть ошибки - вывести их
+        glGetShaderiv(shader_id, GL_COMPILE_STATUS, &success);
+        if (!success)
+        {
+            glGetShaderInfoLog(shader_id, 512, NULL, infoLog);
+            std::cout << "ERROR::SHADER::COMPILATION_FAILED\n" << shader_path << "\n" << infoLog << std::endl;
+            exit(1);
+        };
+
+
+        glAttachShader(this->m_Program, shader_id);
+        // Удаляем шейдеры, поскольку они уже в программу и нам больше не нужны.
+        glDeleteShader(shader_id);
+
+        return shader_id;
+    }
+
+    void linkProgram()
+    {
+        glLinkProgram(this->m_Program);
+
+        //Если есть ошибки - вывести их
+        glGetProgramiv(this->m_Program, GL_LINK_STATUS, &success);
+        if (!success)
+        {
+            glGetProgramInfoLog(this->m_Program, 512, NULL, infoLog);
+            std::cout << "ERROR::SHADER::PROGRAM::LINKING_FAILED\n" << infoLog << std::endl;
+            exit(1);
+        }
     }
 };
 

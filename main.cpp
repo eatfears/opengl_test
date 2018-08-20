@@ -131,12 +131,14 @@ int main()
     /***********************************************************/
 
     // Build and compile our shader program
-    Shader lightingShader("./shaders/shader.vert", "./shaders/shader.frag");
+    Shader lightingShader("./shaders/shadow/shader.vert", "./shaders/shadow/shader.frag");
     Shader lampShader("./shaders/simpleshader.vert", "./shaders/lampshader.frag");
     Shader singleColorShader("./shaders/scalingshader.vert", "./shaders/singlecolorshader.frag");
-    Shader rgbaShader("./shaders/shader.vert", "./shaders/rgbashader.frag");
+    Shader rgbaShader("./shaders/shadow/shader.vert", "./shaders/rgbashader.frag");
     Shader screenShader("./shaders/postshader.vert", "./shaders/postshader.frag");
     Shader skyboxShader("./shaders/skyboxshader.vert", "./shaders/skyboxshader.frag");
+    Shader normalesShader("./shaders/normales/normales.vert", "./shaders/normales/normales.frag");
+    normalesShader.setGeometryShader("./shaders/normales/g_normales.vert");
 
     GLuint boxDiffuseTexture, boxSpecularTexture, vegetationTexture, windowsTexture, skyboxCubemapTexture;
     boxDiffuseTexture = TextureFromFile("resources/textures/container2.png", true);
@@ -682,7 +684,7 @@ int main()
         model = glm::scale(model, glm::vec3(4.0f, 4.0f, 4.0f));
         model = glm::rotate(model, currentFrame/50.0f, glm::vec3(0.0f, 1.0f, 0.0f));
         lightingShader.setMat4("model", model);
-        planet.Draw(lightingShader);
+        planet.draw(lightingShader);
 
         // рендер метеоритов
 #define INSTANCE
@@ -719,20 +721,31 @@ int main()
         }
 #endif
 
-        lightingShader.use();
         model = glm::translate(glm::mat4(1.0f), glm::vec3(0.0f, 0.5f, 0.0f));
         model = glm::scale(model, glm::vec3(0.2f));
         if (gui.rotate)
         {
             model = glm::rotate(model, currentFrame, glm::vec3(0.0f, 1.0f, 0.0f));
         }
-        lightingShader.setMat4("model", model);
 
+        if (false)
+        {
+            normalesShader.use();
+            normalesShader.setMat4("model", model);
+            normalesShader.setMat4("view", view);
+            normalesShader.setMat4("projection", projection);
+            glLineWidth(0.1f);
+            nanosuit.draw(normalesShader);
+        }
+
+        lightingShader.use();
+        lightingShader.setMat4("model", model);
 //        glStencilFunc(GL_ALWAYS, 1, 0xFF); // каждый фрагмент обновит трафаретный буфер
 //        glStencilMask(0xFF);
-        nanosuit.Draw(lightingShader);
+        nanosuit.draw(lightingShader);
 //        glStencilFunc(GL_NOTEQUAL, 1, 0xFF);
 //        glStencilMask(0x00); // отключить запись в трафаретный буфер
+
 
         model = glm::translate(glm::mat4(1.0f), glm::vec3(-5.0f, 0.5f, 0.0f));
         model = glm::scale(model, glm::vec3(0.8f));
@@ -740,8 +753,9 @@ int main()
         {
             model = glm::rotate(model, currentFrame, glm::vec3(0.0f, 1.0f, 0.0f));
         }
+        lightingShader.use();
         lightingShader.setMat4("model", model);
-        cyborg.Draw(lightingShader);
+        cyborg.draw(lightingShader);
 
         glEnable(GL_CULL_FACE);
         // Also draw the lamp object, again binding the appropriate shader
