@@ -172,6 +172,7 @@ void main()
     if (normal_mapping)
     {
         norm = (texture2D(material.texture_bump1, texCoords).rgb);
+//        norm.g = 1 - norm.g;
         if (length(norm) == 0.0)
         {
             norm = vec3(0.0, 0.0, 1.0);
